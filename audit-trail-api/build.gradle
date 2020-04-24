@@ -5,6 +5,13 @@ test {
     finalizedBy jacocoTestReport
 }
 
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+}
+
 jacocoTestCoverageVerification {
     violationRules {
         rule {
