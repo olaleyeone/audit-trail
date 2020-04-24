@@ -9,7 +9,7 @@ import javax.persistence.EntityManager;
 import java.util.Random;
 
 @SpringBootTest(classes = TestApplication.class)
-public abstract class EntityTest {
+public class EntityTest {
 
     @Autowired
     protected EntityManager entityManager;

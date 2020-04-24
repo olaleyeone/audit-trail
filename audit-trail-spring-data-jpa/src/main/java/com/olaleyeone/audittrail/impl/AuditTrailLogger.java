@@ -23,13 +23,15 @@ public abstract class AuditTrailLogger implements TransactionSynchronization {
 
     @Getter(AccessLevel.NONE)
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final LocalDateTime startTime = LocalDateTime.now();
+    private final List<AuditTrailActivity> auditTrailActivities = new ArrayList<>();
 
     private final AuditTrailLoggerDelegate auditTrailLoggerDelegate;
     private final EntityStateLogger entityStateLogger;
-    private final ActivityLogger activityLogger;
 
-    private final List<AuditTrailActivity> auditTrailActivities = new ArrayList<>();
-    private final LocalDateTime startTime = LocalDateTime.now();
+    @Getter(lazy = true)
+    private final ActivityLogger activityLogger = createActivityLogger(auditTrailActivities);
+
 
     public AuditTrailLogger(AuditTrailLoggerDelegate auditTrailLoggerDelegate) {
         this(auditTrailLoggerDelegate, new EntityStateLoggerImpl());
@@ -38,7 +40,6 @@ public abstract class AuditTrailLogger implements TransactionSynchronization {
     public AuditTrailLogger(AuditTrailLoggerDelegate auditTrailLoggerDelegate, EntityStateLogger entityStateLogger) {
         this.auditTrailLoggerDelegate = auditTrailLoggerDelegate;
         this.entityStateLogger = entityStateLogger;
-        this.activityLogger = createActivityLogger(auditTrailActivities);
     }
 
     @Override

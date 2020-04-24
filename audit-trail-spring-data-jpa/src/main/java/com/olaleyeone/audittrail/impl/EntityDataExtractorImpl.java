@@ -41,8 +41,7 @@ public abstract class EntityDataExtractorImpl implements EntityDataExtractor {
         Class<?> type = getType(entity);
         EntityType<?> entityType = entityManager.getMetamodel().entity(type);
         Serializable identifier = getPrimaryKey(entity);
-        EntityIdentifier entityIdentifier = new EntityIdentifierImpl(entityType, identifier);
-        return entityIdentifier;
+        return new EntityIdentifierImpl(entityType, identifier);
     }
 
     @Override
@@ -73,7 +72,10 @@ public abstract class EntityDataExtractorImpl implements EntityDataExtractor {
                 }
             } else if (attribute.getPersistentAttributeType() == Attribute.PersistentAttributeType.MANY_TO_ONE
                     || attribute.getPersistentAttributeType() == Attribute.PersistentAttributeType.ONE_TO_ONE) {
-                Serializable identifier = value != null ? getPrimaryKey(value) : null;
+                Serializable identifier = null;
+                if (value != null) {
+                    identifier = getPrimaryKey(value);
+                }
                 dataMap.put(attribute.getName(), new AuditDataImpl(identifier));
             } else {
                 logger.warn("Ignored {} {}.{}", attribute.getPersistentAttributeType(),
