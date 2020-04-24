@@ -1,6 +1,5 @@
 package com.olaleyeone.audittrail.advice;
 
-import com.olaleyeone.audittrail.entity.Task;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -9,14 +8,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
-import java.time.LocalDateTime;
 
 @Transactional
 @SpringBootTest(classes = EntityManagerPointcutTest.AdviceTestApplication.class)
@@ -28,40 +24,35 @@ class EntityManagerPointcutTest {
     @Autowired
     private EntityManager entityManager;
 
-    private Task task;
-
     @BeforeEach
     void setUp() {
-        task = new Task();
-        task.setName("abc");
-        task.setType("test");
-        task.setStartedOn(LocalDateTime.now());
     }
 
     @Test
     void persist() {
-        entityManager.persist(task);
+        entityManager.persist(1L);
         Mockito.verify(advice, Mockito.times(1)).onPersist(Mockito.any());
     }
 
     @Test
     void merge() {
-        task.setId(1L);
-        entityManager.merge(task);
+        entityManager.merge(1L);
         Mockito.verify(advice, Mockito.times(1)).onMerge(Mockito.any());
     }
 
     @Test
     void remove() {
-        task.setId(1L);
-        entityManager.remove(task);
+        entityManager.remove(1L);
         Mockito.verify(advice, Mockito.times(1)).onRemove(Mockito.any());
     }
 
     @SpringBootApplication
-    @EnableJpaRepositories({"com.olaleyeone.audittrail.repository"})
-    @EntityScan({"com.olaleyeone.audittrail.entity"})
     static class AdviceTestApplication {
+
+        @Bean
+        public EntityManager entityManager() {
+            return Mockito.mock(EntityManager.class);
+        }
 
         @Bean
         public Advice advice() {
