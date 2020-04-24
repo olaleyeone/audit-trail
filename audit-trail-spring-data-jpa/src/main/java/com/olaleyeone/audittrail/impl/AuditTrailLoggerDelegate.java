@@ -41,7 +41,9 @@ public class AuditTrailLoggerDelegate {
         auditTrail.setStatus(status);
         List<AuditTrailActivity> auditTrailActivities = auditTrailLogger.getAuditTrailActivities();
         if (!auditTrailActivities.isEmpty()) {
-            auditTrail.setName(auditTrailActivities.iterator().next().getName());
+            AuditTrailActivity primeActivity = auditTrailActivities.iterator().next();
+            auditTrail.setName(primeActivity.getName());
+            auditTrail.setDescription(primeActivity.getDescription());
         }
         auditTrail.setStartedOn(auditTrailLogger.getStartTime());
         auditTrail.setEstimatedTimeTakenInNanos(auditTrailLogger.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS));
