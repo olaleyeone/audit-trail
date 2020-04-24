@@ -1,0 +1,2 @@
+include "${projectName}-api",
+        "${projectName}-spring-data-jpa"

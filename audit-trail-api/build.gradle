@@ -1,0 +1,16 @@
+apply plugin: 'jacoco'
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'CLASS'
+            limit {
+                minimum = 0.95
+            }
+            excludes = [
+                    'com.olaleyeone.audittrail.error.*'
+            ]
+        }
+    }
+}
+check.dependsOn jacocoTestCoverageVerification
