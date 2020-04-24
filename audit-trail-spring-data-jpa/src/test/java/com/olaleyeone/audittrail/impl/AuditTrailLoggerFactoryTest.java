@@ -47,6 +47,13 @@ class AuditTrailLoggerFactoryTest extends EntityTest {
     }
 
     @Test
+    void testCreateLogger1() {
+        AuditTrailLoggerFactory auditTrailLoggerFactory = new AuditTrailLoggerFactory();
+        AuditTrailLogger auditTrailLogger = auditTrailLoggerFactory.createLogger(null);
+        assertEquals(Optional.empty(), auditTrailLogger.getTask());
+    }
+
+    @Test
     void testCreateLogger2() {
         Task task = Mockito.mock(Task.class);
         AuditTrailLoggerFactory auditTrailLoggerFactory = new AuditTrailLoggerFactory() {

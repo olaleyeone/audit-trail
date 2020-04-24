@@ -6,13 +6,12 @@
 package com.olaleyeone.audittrail.advice;
 
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
-import com.olaleyeone.audittrail.api.EntityStateLogger;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
+import com.olaleyeone.audittrail.api.EntityStateLogger;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +19,7 @@ import javax.inject.Provider;
 
 @RequiredArgsConstructor
 @Aspect
-public class AuditTrailAdvice {
+public class AuditTrailAdvice implements EntityManagerPointcut {
 
     final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -28,19 +27,7 @@ public class AuditTrailAdvice {
 
     private final Provider<EntityStateLogger> entityUpdateLogProvider;
 
-    @Pointcut("execution(* javax.persistence.EntityManager.persist(Object))")
-    public void onSave() {
-    }
-
-    @Pointcut("execution(* javax.persistence.EntityManager.merge(Object))")
-    public void onUpdate() {
-    }
-
-    @Pointcut("execution(* javax.persistence.EntityManager.remove(Object))")
-    public void onRemove() {
-    }
-
-    @Around("onSave()")
+    @Around("persist()")
     public Object adviceEntityCreation(ProceedingJoinPoint jp) throws Throwable {
         Object result = jp.proceed(jp.getArgs());
         Object entity = jp.getArgs()[0];
@@ -53,7 +40,7 @@ public class AuditTrailAdvice {
         return result;
     }
 
-    @Around("onUpdate()")
+    @Around("merge()")
     public Object adviceEntityUpdate(ProceedingJoinPoint jp) throws Throwable {
         Object entity = jp.getArgs()[0];
 
@@ -69,7 +56,7 @@ public class AuditTrailAdvice {
         return jp.proceed(jp.getArgs());
     }
 
-    @Around("onRemove()")
+    @Around("remove()")
     public Object adviceEntityDelete(ProceedingJoinPoint jp) throws Throwable {
         Object result = jp.proceed(jp.getArgs());
         Object entity = jp.getArgs()[0];
@@ -79,4 +66,5 @@ public class AuditTrailAdvice {
 
         return result;
     }
+
 }
