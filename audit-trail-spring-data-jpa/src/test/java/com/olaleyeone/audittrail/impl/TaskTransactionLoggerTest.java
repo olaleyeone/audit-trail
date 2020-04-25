@@ -1,15 +1,13 @@
 package com.olaleyeone.audittrail.impl;
 
+import com.olalayeone.audittrailtest.DataFactory;
 import com.olalayeone.audittrailtest.EntityTest;
 import com.olaleyeone.audittrail.advice.AuditTrailAdvice;
 import com.olaleyeone.audittrail.api.*;
-import com.olaleyeone.audittrail.entity.AuditTrail;
-import com.olaleyeone.audittrail.entity.EntityState;
-import com.olaleyeone.audittrail.entity.EntityStateAttribute;
-import com.olaleyeone.audittrail.entity.Task;
-import com.olaleyeone.audittrail.repository.AuditTrailRepository;
+import com.olaleyeone.audittrail.entity.*;
 import com.olaleyeone.audittrail.repository.EntityStateAttributeRepository;
 import com.olaleyeone.audittrail.repository.EntityStateRepository;
+import com.olaleyeone.audittrail.repository.TaskTransactionRepository;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,13 +26,13 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
-class AuditTrailLoggerDelegateTest extends EntityTest {
+class TaskTransactionLoggerTest extends EntityTest {
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
-    private AuditTrailRepository auditTrailRepository;
+    private TaskTransactionRepository taskTransactionRepository;
 
     @Autowired
     private EntityStateRepository entityStateRepository;
@@ -45,32 +43,30 @@ class AuditTrailLoggerDelegateTest extends EntityTest {
     @Autowired
     private AuditTrailAdvice auditTrailAdvice;
 
-    private AuditTrailLoggerDelegate auditTrailLoggerDelegate;
+    @Autowired
+    private DataFactory dataFactory;
 
-    private AuditTrailLogger auditTrailLogger;
+    private TaskTransactionLogger taskTransactionLogger;
+
+    private TaskTransactionContext taskTransactionContext;
     private TransactionTemplate transactionTemplate;
 
     @BeforeEach
     void setUp() {
         transactionTemplate = Mockito.spy(applicationContext.getBean(TransactionTemplate.class));
-        auditTrailLoggerDelegate = new AuditTrailLoggerDelegate(entityManager, transactionTemplate);
-
+        taskTransactionLogger = new TaskTransactionLogger(entityManager, transactionTemplate);
 
         EntityStateLogger entityStateLogger = Mockito.mock(EntityStateLogger.class);
         List<EntityOperation> entityOperations = getEntityHistoryLogs();
         Mockito.doReturn(entityOperations).when(entityStateLogger).getOperations();
 
-        auditTrailLogger = Mockito.mock(AuditTrailLogger.class);
-        Mockito.doReturn(LocalDateTime.now()).when(auditTrailLogger).getStartTime();
-        Mockito.doReturn(Collections.EMPTY_LIST).when(auditTrailLogger).getAuditTrailActivities();
-        Mockito.doReturn(entityStateLogger).when(auditTrailLogger).getEntityStateLogger();
+        taskTransactionContext = Mockito.mock(TaskTransactionContext.class);
+        Mockito.doReturn(LocalDateTime.now()).when(taskTransactionContext).getStartTime();
+        Mockito.doReturn(Collections.EMPTY_LIST).when(taskTransactionContext).getAuditTransactionActivities();
+        Mockito.doReturn(entityStateLogger).when(taskTransactionContext).getEntityStateLogger();
+        Mockito.doReturn(dataFactory.getTaskActivity()).when(taskTransactionContext).getTaskActivity();
 
-        Task task = new Task();
-        task.setStartedOn(LocalDateTime.now());
-        task.setName(faker.funnyName().name());
-        task.setType(faker.app().name());
-        entityManager.persist(task);
-        Mockito.doReturn(Optional.of(task)).when(auditTrailLogger).getTask();
+        Mockito.doReturn(dataFactory.getTask()).when(taskTransactionContext).getTask();
     }
 
     @AfterEach
@@ -81,19 +77,19 @@ class AuditTrailLoggerDelegateTest extends EntityTest {
     @Test
     void saveUnitOfWork() {
 
-        auditTrailLoggerDelegate.saveUnitOfWork(auditTrailLogger, AuditTrail.Status.SUCCESSFUL);
+        taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.SUCCESSFUL);
 
-        assertEquals(1, auditTrailRepository.count());
+        assertEquals(1, taskTransactionRepository.count());
         assertEquals(3, entityStateRepository.count());
         assertEquals(3, entityStateAttributeRepository.count());
 
-        List<AuditTrail> units = auditTrailRepository.getAllByRequest(auditTrailLogger.getTask().get());
+        List<TaskTransaction> units = taskTransactionRepository.getAllByTask(taskTransactionContext.getTask());
 
         assertEquals(1, units.size());
-        AuditTrail auditTrail = units.iterator().next();
-        auditTrailLogger.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
+        TaskTransaction taskTransaction = units.iterator().next();
+        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
             EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
-            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(auditTrail, entityIdentifier.getEntityName(),
+            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
                     entityIdentifier.getPrimaryKey().toString());
             assertTrue(optionalEntityHistory.isPresent());
             EntityState entityState = optionalEntityHistory.get();
@@ -104,52 +100,55 @@ class AuditTrailLoggerDelegateTest extends EntityTest {
 
     @Test
     void shouldSaveActivityLogs() {
-        ActivityLoggerImpl activityLogger = new ActivityLoggerImpl(new ArrayList<>());
-        activityLogger.log(faker.funnyName().name(), faker.backToTheFuture().quote());
-        activityLogger.log(faker.funnyName().name(), faker.backToTheFuture().quote());
-        Mockito.doReturn(activityLogger.getAuditTrailActivities()).when(auditTrailLogger).getAuditTrailActivities();
-        AuditTrail auditTrail = auditTrailLoggerDelegate.saveUnitOfWork(auditTrailLogger, AuditTrail.Status.SUCCESSFUL);
-        assertEquals(AuditTrail.Status.SUCCESSFUL, auditTrail.getStatus());
-        activityLogger.getAuditTrailActivities()
-                .forEach(activityLog -> {
-                    assertNotNull(activityLog.getId());
-                    assertEquals(auditTrail, activityLog.getAuditTrail());
+
+        List<TaskActivity> taskActivities = Arrays.asList(dataFactory.getTaskActivity(false), dataFactory.getTaskActivity(false));
+        Mockito.doReturn(taskActivities).when(taskTransactionContext).getAuditTransactionActivities();
+
+        TaskTransaction taskTransaction = taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.SUCCESSFUL);
+        assertEquals(TaskTransaction.Status.SUCCESSFUL, taskTransaction.getStatus());
+        taskActivities
+                .forEach(taskActivity -> {
+                    assertNotNull(taskActivity.getId());
+                    assertEquals(taskTransaction, taskActivity.getTaskTransaction());
+                    assertEquals(taskTransaction.getTaskActivity(), taskActivity.getParentActivity());
+                    assertEquals(taskTransaction.getTask(), taskActivity.getTask());
                 });
     }
 
     @Test
     void saveErrorInNewTransaction() {
         Mockito.doCallRealMethod().when(transactionTemplate).execute(Mockito.any());
-        auditTrailLoggerDelegate.saveFailure(auditTrailLogger, AuditTrail.Status.SUCCESSFUL);
+
+        taskTransactionLogger.saveFailure(taskTransactionContext, TaskTransaction.Status.SUCCESSFUL);
         Mockito.verify(transactionTemplate, Mockito.times(1))
                 .execute(Mockito.any());
-        Mockito.verify(auditTrailLogger, Mockito.times(1))
+        Mockito.verify(taskTransactionContext, Mockito.times(1))
                 .getEntityStateLogger();
-        Mockito.verify(auditTrailLogger, Mockito.atLeast(1))
-                .getAuditTrailActivities();
-        Mockito.verify(auditTrailLogger, Mockito.atLeast(1))
+        Mockito.verify(taskTransactionContext, Mockito.atLeast(1))
+                .getAuditTransactionActivities();
+        Mockito.verify(taskTransactionContext, Mockito.atLeast(1))
                 .getStartTime();
     }
 
     @Test
     void shouldNotPropagateExceptionWhenSavingError() {
         Mockito.doThrow(IllegalArgumentException.class).when(transactionTemplate).execute(Mockito.any());
-        auditTrailLoggerDelegate.saveFailure(null, AuditTrail.Status.SUCCESSFUL);
+        taskTransactionLogger.saveFailure(null, TaskTransaction.Status.SUCCESSFUL);
         Mockito.verify(transactionTemplate, Mockito.times(1))
                 .execute(Mockito.any());
     }
 
     @Test
     void saveEntityHistory() {
-        AuditTrail auditTrail = createAuditTrail();
+        TaskTransaction taskTransaction = dataFactory.createTaskTransaction();
         OperationType operationType = OperationType.CREATE;
         EntityType<?> entityType = entityManager.getEntityManagerFactory().getMetamodel().entity(Task.class);
         EntityIdentifier entityIdentifier = new EntityIdentifierImpl(entityType, faker.number().randomDigit());
         EntityOperation historyLog = new EntityOperation(entityIdentifier, operationType);
-        EntityState entityState = auditTrailLoggerDelegate.createEntityHistory(auditTrail, historyLog);
+        EntityState entityState = taskTransactionLogger.createEntityHistory(taskTransaction, historyLog);
         assertNotNull(entityState);
         assertNotNull(entityState.getId());
-        assertEquals(auditTrail, entityState.getAuditTrail());
+        assertEquals(taskTransaction, entityState.getTaskTransaction());
         assertEquals(operationType, entityState.getOperationType());
 
         assertEquals(entityType.getName(), entityState.getEntityName());
@@ -158,14 +157,14 @@ class AuditTrailLoggerDelegateTest extends EntityTest {
 
     @Test
     void saveEntityHistoryAttribute() {
-        EntityState entityState = createEntityHistory();
+        EntityState entityState = dataFactory.createEntityState();
 
         EntityAttributeData data = EntityAttributeData.builder()
                 .value(new AuditDataImpl(faker.lordOfTheRings().character()))
                 .previousValue(new AuditDataImpl(faker.lordOfTheRings().character()))
                 .build();
 
-        EntityStateAttribute attribute = auditTrailLoggerDelegate.createEntityHistoryAttribute(entityState, Pair.of(faker.funnyName().name(), data));
+        EntityStateAttribute attribute = taskTransactionLogger.createEntityHistoryAttribute(entityState, Pair.of(faker.funnyName().name(), data));
         assertNotNull(attribute);
         assertNotNull(attribute.getId());
         assertEquals(entityState, attribute.getEntityState());
@@ -191,25 +190,5 @@ class AuditTrailLoggerDelegateTest extends EntityTest {
             entityOperations.add(historyLog);
         }
         return entityOperations;
-    }
-
-    private AuditTrail createAuditTrail() {
-        AuditTrail auditTrail = new AuditTrail();
-        auditTrail.setStartedOn(auditTrailLogger.getStartTime());
-        auditTrail.setStatus(AuditTrail.Status.SUCCESSFUL);
-        auditTrail.setName(faker.funnyName().name());
-        auditTrail.setEstimatedTimeTakenInNanos(faker.number().randomNumber());
-        entityManager.persist(auditTrail);
-        return auditTrail;
-    }
-
-    private EntityState createEntityHistory() {
-        EntityState entityState = new EntityState();
-        entityState.setAuditTrail(createAuditTrail());
-        entityState.setOperationType(OperationType.CREATE);
-        entityState.setEntityName(faker.funnyName().name());
-        entityState.setEntityId(faker.number().digit());
-        entityManager.persist(entityState);
-        return entityState;
     }
 }

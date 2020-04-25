@@ -1,31 +1,29 @@
 package com.olaleyeone.audittrail.entity;
 
+import com.olaleyeone.audittrail.embeddable.Duration;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class AuditTrail {
+public class TaskTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
-    private String name;
+    @ManyToOne(optional = false)
+    private Task task;
 
-    private String description;
+    @ManyToOne(optional = false)
+    private TaskActivity taskActivity;
 
-    @ManyToOne
-    private Task request;
+    @OneToOne
+    private TaskActivity causeOfFailure;
 
-    @Column(nullable = false)
-    private Long estimatedTimeTakenInNanos;
-
-    @Column(nullable = false)
-    private LocalDateTime startedOn;
+    @Embedded
+    private Duration duration;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

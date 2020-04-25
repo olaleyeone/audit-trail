@@ -1,4 +1,4 @@
-package com.olaleyeone.audittrail.entity;
+package com.olaleyeone.audittrail.embeddable;
 
 import lombok.Data;
 

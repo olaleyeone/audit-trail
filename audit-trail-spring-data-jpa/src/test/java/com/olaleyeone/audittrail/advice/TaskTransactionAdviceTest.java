@@ -18,7 +18,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.inOrder;
 
-class AuditTrailAdviceTest extends ComponentTest {
+class TaskTransactionAdviceTest extends ComponentTest {
 
     private AuditTrailAdvice auditTrailAdvice;
 

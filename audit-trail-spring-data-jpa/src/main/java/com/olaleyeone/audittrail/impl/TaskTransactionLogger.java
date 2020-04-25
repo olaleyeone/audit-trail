@@ -2,10 +2,10 @@ package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.api.EntityAttributeData;
 import com.olaleyeone.audittrail.api.EntityOperation;
-import com.olaleyeone.audittrail.entity.AuditTrailActivity;
-import com.olaleyeone.audittrail.entity.AuditTrail;
+import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.EntityState;
 import com.olaleyeone.audittrail.entity.EntityStateAttribute;
+import com.olaleyeone.audittrail.entity.TaskTransaction;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,51 +14,50 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
 
 @RequiredArgsConstructor
-public class AuditTrailLoggerDelegate {
+public class TaskTransactionLogger {
 
     final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final EntityManager entityManager;
     private final TransactionTemplate transactionTemplate;
 
-    public AuditTrail saveUnitOfWork(AuditTrailLogger auditTrailLogger, AuditTrail.Status status) {
-        AuditTrail auditTrail = createUnitOfWork(auditTrailLogger, status);
-        auditTrailLogger.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> createEntityHistory(auditTrail, entityHistoryLog));
-        auditTrailLogger.getAuditTrailActivities().forEach(activityLog -> {
-            activityLog.setId(null);
-            activityLog.setAuditTrail(auditTrail);
-            entityManager.persist(activityLog);
+    public TaskTransaction saveUnitOfWork(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
+        TaskTransaction taskTransaction = createTaskTransaction(taskTransactionContext, status);
+        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
+
+        taskTransactionContext.getAuditTransactionActivities().forEach(taskActivity -> {
+            taskActivity.setId(null);
+            taskActivity.setTask(taskTransaction.getTask());
+            taskActivity.setParentActivity(taskTransaction.getTaskActivity());
+            taskActivity.setTaskTransaction(taskTransaction);
+            entityManager.persist(taskActivity);
         });
-        return auditTrail;
+        return taskTransaction;
     }
 
-    AuditTrail createUnitOfWork(AuditTrailLogger auditTrailLogger, AuditTrail.Status status) {
-        AuditTrail auditTrail = new AuditTrail();
-        auditTrail.setStatus(status);
-        List<AuditTrailActivity> auditTrailActivities = auditTrailLogger.getAuditTrailActivities();
-        if (!auditTrailActivities.isEmpty()) {
-            AuditTrailActivity primeActivity = auditTrailActivities.iterator().next();
-            auditTrail.setName(primeActivity.getName());
-            auditTrail.setDescription(primeActivity.getDescription());
-        }
-        auditTrail.setStartedOn(auditTrailLogger.getStartTime());
-        auditTrail.setEstimatedTimeTakenInNanos(auditTrailLogger.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS));
-        auditTrailLogger.getTask().ifPresent(task -> {
-            auditTrail.setRequest(task);
-            task.setEstimatedTimeTakenInNanos(task.getStartedOn().until(LocalDateTime.now(), ChronoUnit.NANOS));
-            entityManager.merge(task);
-        });
-        entityManager.persist(auditTrail);
-        return auditTrail;
+    TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
+        TaskTransaction taskTransaction = new TaskTransaction();
+        taskTransaction.setStatus(status);
+
+        taskTransaction.setTaskActivity(taskTransactionContext.getTaskActivity());
+
+        taskTransaction.setDuration(Duration.builder()
+                .startedOn(taskTransactionContext.getStartTime())
+                .nanoSeconds(taskTransactionContext.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS))
+                .build());
+
+        taskTransaction.setTask(taskTransactionContext.getTask());
+
+        entityManager.persist(taskTransaction);
+        return taskTransaction;
     }
 
-    EntityState createEntityHistory(AuditTrail auditTrail, EntityOperation entityOperation) {
+    EntityState createEntityHistory(TaskTransaction taskTransaction, EntityOperation entityOperation) {
         EntityState entityState = new EntityState();
-        entityState.setAuditTrail(auditTrail);
+        entityState.setTaskTransaction(taskTransaction);
         entityState.setOperationType(entityOperation.getOperationType());
         entityState.setEntityName(entityOperation.getEntityIdentifier().getEntityName());
         entityState.setEntityId(entityOperation.getEntityIdentifier().getPrimaryKey().toString());
@@ -84,10 +83,10 @@ public class AuditTrailLoggerDelegate {
         return entityStateAttribute;
     }
 
-    public void saveFailure(AuditTrailLogger auditTrailLogger, AuditTrail.Status status) {
+    public void saveFailure(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
         try {
             transactionTemplate.execute(txStatus -> {
-                saveUnitOfWork(auditTrailLogger, status);
+                saveUnitOfWork(taskTransactionContext, status);
                 return null;
             });
         } catch (Exception e) {

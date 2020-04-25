@@ -1,9 +1,11 @@
 package com.olalayeone.audittrailtest;
 
 import com.olaleyeone.audittrail.advice.AuditTrailAdvice;
-import com.olaleyeone.audittrail.impl.AuditTrailLogger;
-import com.olaleyeone.audittrail.impl.AuditTrailLoggerDelegate;
-import com.olaleyeone.audittrail.impl.AuditTrailLoggerFactory;
+import com.olaleyeone.audittrail.impl.TaskContext;
+import com.olaleyeone.audittrail.impl.TaskTransactionContext;
+import com.olaleyeone.audittrail.impl.TaskTransactionContextFactory;
+import com.olaleyeone.audittrail.impl.TaskTransactionLogger;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -21,13 +23,18 @@ public class TestApplication {
     }
 
     @Bean
-    public AuditTrailLoggerFactory auditTrailLoggerFactory() {
-        return new AuditTrailLoggerFactory() {
+    public TaskTransactionContextFactory taskTransactionContextFactory() {
+        return new TaskTransactionContextFactory() {
 
             @Override
-            public AuditTrailLogger createLogger(AuditTrailLoggerDelegate auditTrailLoggerDelegate) {
-                return Mockito.mock(AuditTrailLogger.class);
+            public TaskTransactionContext createTaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
+                return Mockito.mock(TaskTransactionContext.class);
             }
         };
+    }
+
+    @Bean
+    public TaskContext taskContext() {
+        return Mockito.mock(TaskContext.class);
     }
 }
