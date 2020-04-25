@@ -4,6 +4,8 @@ import com.olaleyeone.audittrail.api.AuditData;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -28,6 +30,23 @@ public class AuditDataImpl implements AuditData {
         if (ignoreData) {
             return Optional.empty();
         }
-        return getData().map(Object::toString);
+        if (value == null) {
+            return Optional.empty();
+        }
+        if (value instanceof byte[]) {
+            return Optional.of(Base64.getEncoder().encodeToString((byte[]) value));
+        }
+        if (value instanceof Byte[]) {
+            return Optional.of(Base64.getEncoder().encodeToString(toPrimitive((Byte[]) value)));
+        }
+        return Optional.of(value.toString());
+    }
+
+    private byte[] toPrimitive(Byte[] referenceBytes) {
+        byte[] primitiveBytes = new byte[referenceBytes.length];
+        for (int i = 0; i < referenceBytes.length; i++) {
+            primitiveBytes[i] = referenceBytes[i];
+        }
+        return primitiveBytes;
     }
 }
