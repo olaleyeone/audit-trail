@@ -5,6 +5,8 @@ import com.olaleyeone.audittrail.api.AuditData;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.api.EntityStateLogger;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
+import com.olaleyeone.audittrail.entity.TaskActivity;
+import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import com.olaleyeone.audittrail.impl.TaskTransactionContext;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +17,7 @@ import org.mockito.Mockito;
 
 import javax.inject.Provider;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.inOrder;
@@ -31,13 +34,17 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     private EntityIdentifier entityIdentifier;
 
+    @Mock
+    private TaskContextImpl taskContext;
+
     @BeforeEach
     public void setUp() {
+        Mockito.doReturn(Optional.of(new TaskActivity())).when(taskContext).getTaskActivity();
         entityManagerAdvice = new EntityManagerAdvice(entityDataExtractor, new Provider<TaskTransactionContext>() {
 
             @Override
             public TaskTransactionContext get() {
-                return new TaskTransactionContext(null, null, entityStateLogger);
+                return new TaskTransactionContext(taskContext, null, entityStateLogger);
             }
         });
         entityIdentifier = new EntityIdentifier(Object.class, faker.funnyName().name(), faker.number().randomDigit());

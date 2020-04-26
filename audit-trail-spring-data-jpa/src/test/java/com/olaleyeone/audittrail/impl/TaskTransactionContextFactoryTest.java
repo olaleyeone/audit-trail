@@ -14,7 +14,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Provider;
-import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,14 +31,15 @@ class TaskTransactionContextFactoryTest extends EntityTest {
 
     private TaskContextHolder taskContextHolder;
     private TaskTransactionContextFactory taskTransactionContextFactory;
+    private TaskActivity taskActivity;
 
     @BeforeEach
     public void setUp() {
         taskContextHolder = new TaskContextHolder();
-        taskTransactionContextFactory = new TaskTransactionContextFactory(taskContextHolder);
+        taskTransactionContextFactory = Mockito.spy(new TaskTransactionContextFactory(taskContextHolder));
         applicationContext.getAutowireCapableBeanFactory().autowireBean(taskTransactionContextFactory);
 
-        TaskActivity taskActivity = new TaskActivity();
+        taskActivity = new TaskActivity();
         taskActivity.setTask(new Task());
 
         Mockito.doReturn(taskActivity.getTask()).when(taskContext).getTask();
@@ -102,19 +102,31 @@ class TaskTransactionContextFactoryTest extends EntityTest {
 
     @Test
     void testCreateTaskTransactionContext2() {
-        ArrayList<Object> list = new ArrayList<>();
-        Mockito.doReturn(list).when(taskContext).getTaskActivities();
-        Mockito.doAnswer(invocation -> {
-            list.add(invocation.getArgument(0));
-            return null;
-        }).when(taskContext).addActivity(Mockito.any());
-        taskContextHolder.registerContext(taskContext);
+
+        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
+        taskContext.start(null);
 
         TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.createTaskTransactionContext(null);
         TaskContextImpl currentTaskContext = taskContextHolder.getObject();
-        assertNotSame(taskContext, currentTaskContext);
+        assertSame(taskContext, currentTaskContext);
+
         currentTaskContext.execute(faker.lordOfTheRings().location(), () -> null);
-        assertEquals(1, taskTransactionContext.getAuditTransactionActivities().size());
+
         assertEquals(1, taskContext.getTaskActivities().size());
+        assertEquals(0, taskTransactionContext.getTaskActivities().size());
+    }
+
+    @Test
+    public void joinAvailableTransaction(){
+        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
+        taskContext.start(null);
+        transactionTemplate.execute(status -> {
+            TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.getObject();
+            taskContext.execute(faker.lordOfTheRings().location(), () -> null);
+
+            assertEquals(1, taskContext.getTaskActivities().size());
+            assertEquals(1, taskTransactionContext.getTaskActivities().size());
+            return null;
+        });
     }
 }

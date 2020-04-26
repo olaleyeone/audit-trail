@@ -13,6 +13,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Method;
@@ -30,6 +31,9 @@ class ActivityAdviceTest extends ComponentTest {
     private ProceedingJoinPoint proceedingJoinPoint;
 
     private Task task;
+
+    @Mock
+    private TaskTransactionContextFactory taskTransactionContextFactory;
 
     @BeforeEach
     public void setUp() throws NoSuchMethodException {
@@ -53,7 +57,7 @@ class ActivityAdviceTest extends ComponentTest {
     @Test
     void activityMethodInvoked() throws Throwable {
 
-        TaskContextImpl taskContext = new TaskContextImpl(task, null, taskContextHolder);
+        TaskContextImpl taskContext = new TaskContextImpl(task, null, taskContextHolder, taskTransactionContextFactory);
         taskContextHolder.registerContext(taskContext);
 
         activityAdvice.adviceActivityMethod(proceedingJoinPoint);
@@ -72,7 +76,7 @@ class ActivityAdviceTest extends ComponentTest {
     @Test
     void activityMethodThrowsError() throws Throwable {
 
-        TaskContextImpl taskContext = new TaskContextImpl(task, null, taskContextHolder);
+        TaskContextImpl taskContext = new TaskContextImpl(task, null, taskContextHolder, taskTransactionContextFactory);
         taskContextHolder.registerContext(taskContext);
 
         Mockito.doAnswer(invocation -> {
@@ -105,7 +109,7 @@ class ActivityAdviceTest extends ComponentTest {
     @Test
     void testPropagatedError() throws Throwable {
 
-        TaskContextImpl taskContext1 = new TaskContextImpl(task, null, taskContextHolder);
+        TaskContextImpl taskContext1 = new TaskContextImpl(task, null, taskContextHolder, taskTransactionContextFactory);
         taskContextHolder.registerContext(taskContext1);
 
         List<TaskActivity> list = new ArrayList<>();

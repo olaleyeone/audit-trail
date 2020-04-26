@@ -36,17 +36,17 @@ public class ActivityAdvice implements ActivityPointCut {
         CodeInstruction entryPoint = CodeLocationUtil.getEntryPoint(methodSignature);
         Activity activity = CodeLocationUtil.getActivityAnnotation(methodSignature);
 
-        TaskActivity taskActivity = getTaskActivity(parentContext, entryPoint, activity);
+        TaskActivity taskActivity = createTaskActivity(parentContext, entryPoint, activity);
         return startActivity(taskActivity, jp, parentContext);
     }
 
     private Object startActivity(TaskActivity taskActivity, ProceedingJoinPoint jp, TaskContextImpl parentTaskContext) throws Throwable {
 
-        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder);
-        taskContext.start(parentTaskContext);
-        LocalDateTime now = LocalDateTime.now();
 
-        taskTransactionContextFactory.initialize();
+        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
+        taskContext.start(parentTaskContext);
+
+        LocalDateTime now = LocalDateTime.now();
 
         Object result;
         try {
@@ -65,14 +65,13 @@ public class ActivityAdvice implements ActivityPointCut {
         }
     }
 
-    private TaskActivity getTaskActivity(TaskContextImpl parentContext, CodeInstruction entryPoint, Activity activity) {
+    private TaskActivity createTaskActivity(TaskContextImpl parentContext, CodeInstruction entryPoint, Activity activity) {
         TaskActivity taskActivity = new TaskActivity();
         taskActivity.setTask(parentContext.getTask());
         taskActivity.setParentActivity(parentContext.getTaskActivity().orElse(null));
         taskActivity.setName(activity.value());
         taskActivity.setStatus(TaskActivity.Status.IN_PROGRESS);
         taskActivity.setEntryPoint(entryPoint);
-        parentContext.addActivity(taskActivity);
         return taskActivity;
     }
 

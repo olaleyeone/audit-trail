@@ -26,15 +26,10 @@ public class TaskTransactionLogger {
     public TaskTransaction saveTaskTransaction(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
         TaskTransaction taskTransaction = createTaskTransaction(taskTransactionContext, status);
 
-        TaskActivity taskActivity = taskTransaction.getTaskActivity();
-
         taskTransactionContext.getEntityStateLogger().getOperations()
                 .forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
 
-        taskTransactionContext.getAuditTransactionActivities().forEach(activityInTransaction -> {
-            activityInTransaction.setId(null);
-            activityInTransaction.setTask(taskTransaction.getTask());
-            activityInTransaction.setParentActivity(taskActivity);
+        taskTransactionContext.getTaskActivities().forEach(activityInTransaction -> {
             activityInTransaction.setTaskTransaction(taskTransaction);
             entityManager.persist(activityInTransaction);
         });

@@ -59,7 +59,7 @@ class TaskTransactionLoggerTest extends EntityTest {
 
         taskTransactionContext = Mockito.mock(TaskTransactionContext.class);
         Mockito.doReturn(LocalDateTime.now()).when(taskTransactionContext).getStartTime();
-        Mockito.doReturn(Collections.EMPTY_LIST).when(taskTransactionContext).getAuditTransactionActivities();
+        Mockito.doReturn(Collections.EMPTY_LIST).when(taskTransactionContext).getTaskActivities();
         Mockito.doReturn(entityStateLogger).when(taskTransactionContext).getEntityStateLogger();
 
         TaskActivity taskActivity = dataFactory.getTaskActivity();
@@ -100,7 +100,7 @@ class TaskTransactionLoggerTest extends EntityTest {
     void shouldSaveActivityLogs() {
 
         List<TaskActivity> taskActivities = Arrays.asList(dataFactory.getTaskActivity(false), dataFactory.getTaskActivity(false));
-        Mockito.doReturn(taskActivities).when(taskTransactionContext).getAuditTransactionActivities();
+        Mockito.doReturn(taskActivities).when(taskTransactionContext).getTaskActivities();
 
         TaskTransaction taskTransaction = taskTransactionLogger.saveTaskTransaction(taskTransactionContext, TaskTransaction.Status.COMMITTED);
         assertEquals(TaskTransaction.Status.COMMITTED, taskTransaction.getStatus());
@@ -108,8 +108,6 @@ class TaskTransactionLoggerTest extends EntityTest {
                 .forEach(taskActivity -> {
                     assertNotNull(taskActivity.getId());
                     assertEquals(taskTransaction, taskActivity.getTaskTransaction());
-                    assertEquals(taskTransaction.getTaskActivity(), taskActivity.getParentActivity());
-                    assertEquals(taskTransaction.getTask(), taskActivity.getTask());
                 });
     }
 

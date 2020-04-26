@@ -33,7 +33,7 @@ class TaskTransactionContextTest extends EntityTest {
         entityStateLogger = Mockito.mock(EntityStateLogger.class);
         TaskActivity taskActivity = new TaskActivity();
         taskActivity.setTask(new Task());
-        taskContext = Mockito.spy(new TaskContextImpl(taskActivity, null));
+        taskContext = Mockito.spy(new TaskContextImpl(taskActivity, null, null));
         Mockito.doNothing().when(taskContext).end();
 
         taskTransactionContext = new TaskTransactionContext(taskContext, taskTransactionLogger, entityStateLogger);
@@ -64,7 +64,7 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_COMMITTED);
         assertEquals(TaskTransaction.Status.COMMITTED, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.never()).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).end();
+        Mockito.verify(taskContext, Mockito.never()).end();
     }
 
     @Test
@@ -72,7 +72,7 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
         assertEquals(TaskTransaction.Status.ROLLED_BACK, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.never()).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).end();
+        Mockito.verify(taskContext, Mockito.never()).end();
     }
 
     @Test
@@ -81,7 +81,7 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
         assertEquals(TaskTransaction.Status.ROLLED_BACK, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.times(1)).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).end();
+        Mockito.verify(taskContext, Mockito.never()).end();
     }
 
     @Test
@@ -90,6 +90,6 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_UNKNOWN);
         assertEquals(TaskTransaction.Status.UNKNOWN, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.times(1)).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).end();
+        Mockito.verify(taskContext, Mockito.never()).end();
     }
 }

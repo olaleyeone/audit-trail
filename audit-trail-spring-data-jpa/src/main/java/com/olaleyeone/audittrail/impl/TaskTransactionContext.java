@@ -5,6 +5,7 @@ import com.olaleyeone.audittrail.api.EntityStateLogger;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.entity.TaskTransaction;
+import com.olaleyeone.audittrail.error.NoTaskActivityException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -21,9 +22,10 @@ public class TaskTransactionContext implements TransactionSynchronization {
     @Getter(AccessLevel.NONE)
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final LocalDateTime startTime = LocalDateTime.now();
-    private final List<TaskActivity> auditTransactionActivities = new ArrayList<>();
+    private final List<TaskActivity> taskActivities = new ArrayList<>();
 
     private final TaskContextImpl taskContext;
+    private final TaskActivity taskActivity;
     private final TaskTransactionLogger taskTransactionLogger;
     private final EntityStateLogger entityStateLogger;
 
@@ -35,12 +37,13 @@ public class TaskTransactionContext implements TransactionSynchronization {
 
     public TaskTransactionContext(TaskContextImpl taskContext, TaskTransactionLogger taskTransactionLogger, EntityStateLogger entityStateLogger) {
         this.taskContext = taskContext;
+        this.taskActivity = taskContext.getTaskActivity().orElseThrow(NoTaskActivityException::new);
         this.taskTransactionLogger = taskTransactionLogger;
         this.entityStateLogger = entityStateLogger;
     }
 
     public void addActivity(TaskActivity taskActivity) {
-        this.auditTransactionActivities.add(taskActivity);
+        this.taskActivities.add(taskActivity);
     }
 
     public EntityStateLogger getEntityStateLogger() {
@@ -65,18 +68,17 @@ public class TaskTransactionContext implements TransactionSynchronization {
             this.status = status == TransactionSynchronization.STATUS_ROLLED_BACK
                     ? TaskTransaction.Status.ROLLED_BACK
                     : TaskTransaction.Status.UNKNOWN;
-            if (!auditTransactionActivities.isEmpty()) {
+            if (!taskActivities.isEmpty()) {
                 taskContext.registerFailedTransaction(this);
             }
         }
-        taskContext.end();
     }
 
     public Task getTask() {
-        return taskContext.getTask();
+        return taskActivity.getTask();
     }
 
     public TaskActivity getTaskActivity() {
-        return taskContext.getTaskActivity().get();
+        return taskActivity;
     }
 }

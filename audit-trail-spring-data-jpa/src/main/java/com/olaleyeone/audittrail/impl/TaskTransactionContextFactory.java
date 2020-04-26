@@ -1,7 +1,6 @@
 package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.entity.TaskActivity;
-import com.olaleyeone.audittrail.error.NoTaskActivityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -10,9 +9,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 public class TaskTransactionContextFactory implements FactoryBean<TaskTransactionContext> {
 
@@ -51,6 +48,13 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
         getObject();
     }
 
+    public void joinAvailableTransaction(TaskActivity taskActivity) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        getObject().addActivity(taskActivity);
+    }
+
     private Optional<TaskTransactionContext> getCurrentTaskTransactionLogger() {
         return TransactionSynchronizationManager.getSynchronizations()
                 .stream()
@@ -60,23 +64,7 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
     }
 
     public TaskTransactionContext createTaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
-        TaskContextImpl taskContext = taskContextHolder.getObject();
-        TaskActivity parentTaskActivity = taskContext.getTaskActivity().orElseThrow(NoTaskActivityException::new);
-
-        TaskTransactionContext taskTransactionContext = new TaskTransactionContext(taskContext, taskTransactionLogger);
-
-        TaskContextImpl wrapperContext = new TaskContextImpl(parentTaskActivity, taskContextHolder) {
-
-            @Override
-            protected <E> E startActivity(TaskActivity taskActivity, Supplier<E> action, LocalDateTime now) {
-                taskTransactionContext.addActivity(taskActivity);
-                taskContext.addActivity(taskActivity);
-                return super.startActivity(taskActivity, action, now);
-            }
-        };
-        wrapperContext.start(taskContext);
-
-        return taskTransactionContext;
+        return new TaskTransactionContext(taskContextHolder.getObject(), taskTransactionLogger);
     }
 
     @Override

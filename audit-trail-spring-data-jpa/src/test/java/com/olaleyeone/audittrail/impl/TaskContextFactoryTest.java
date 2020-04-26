@@ -6,6 +6,7 @@ import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,10 +15,13 @@ class TaskContextFactoryTest extends ComponentTest {
     private TaskContextFactory taskContextFactory;
     private TaskContextHolder taskContextHolder;
 
+    @Mock
+    private TaskTransactionContextFactory taskTransactionContextFactory;
+
     @BeforeEach
     void setUp() {
         taskContextHolder = new TaskContextHolder();
-        taskContextFactory = new TaskContextFactory(taskContextHolder);
+        taskContextFactory = new TaskContextFactory(taskContextHolder, taskTransactionContextFactory);
     }
 
     @Test
@@ -31,15 +35,18 @@ class TaskContextFactoryTest extends ComponentTest {
     @Test
     void testTwoLevels() {
         Task task = new Task();
-        TaskContextImpl context1 = taskContextFactory.start(task);
-        TaskActivity child = context1.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
+        TaskContextImpl initialContext = taskContextFactory.start(task);
+        TaskContextImpl childContext = initialContext.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             TaskContextImpl context2 = taskContextHolder.getObject();
-            assertNotSame(context1, context2);
-            assertSame(context1.getTask(), context2.getTask());
-            assertTrue(context2.getTaskActivity().isPresent());
-            return context2.getTaskActivity().get();
+            assertNotSame(initialContext, context2);
+            assertSame(initialContext.getTask(), context2.getTask());
+            return context2;
         });
-        assertTrue(context1.getTaskActivities().contains(child));
+        assertTrue(initialContext.getChildren().contains(childContext));
+        assertTrue(childContext.getTaskActivity().isPresent());
+        TaskActivity taskActivity = childContext.getTaskActivity().get();
+        assertNull(taskActivity.getParentActivity());
+        assertTrue(initialContext.getTaskActivities().contains(taskActivity));
     }
 
     @Test
