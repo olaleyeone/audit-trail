@@ -1,12 +1,10 @@
 package com.olalayeone.audittrailtest;
 
 import com.olaleyeone.audittrail.advice.AuditTrailAdvice;
-import com.olaleyeone.audittrail.impl.TaskContext;
-import com.olaleyeone.audittrail.impl.TaskTransactionContext;
-import com.olaleyeone.audittrail.impl.TaskTransactionContextFactory;
-import com.olaleyeone.audittrail.impl.TaskTransactionLogger;
+import com.olaleyeone.audittrail.impl.*;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +22,7 @@ public class TestApplication {
 
     @Bean
     public TaskTransactionContextFactory taskTransactionContextFactory() {
-        return new TaskTransactionContextFactory() {
+        return new TaskTransactionContextFactory(new TaskContextHolder()) {
 
             @Override
             public TaskTransactionContext createTaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
@@ -34,7 +32,7 @@ public class TestApplication {
     }
 
     @Bean
-    public TaskContext taskContext() {
-        return Mockito.mock(TaskContext.class);
+    public TaskContextImpl taskContext() {
+        return Mockito.mock(TaskContextImpl.class);
     }
 }

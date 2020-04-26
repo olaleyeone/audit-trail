@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -49,12 +48,10 @@ class TaskTransactionLoggerTest extends EntityTest {
     private TaskTransactionLogger taskTransactionLogger;
 
     private TaskTransactionContext taskTransactionContext;
-    private TransactionTemplate transactionTemplate;
 
     @BeforeEach
     void setUp() {
-        transactionTemplate = Mockito.spy(applicationContext.getBean(TransactionTemplate.class));
-        taskTransactionLogger = new TaskTransactionLogger(entityManager, transactionTemplate);
+        taskTransactionLogger = new TaskTransactionLogger(entityManager);
 
         EntityStateLogger entityStateLogger = Mockito.mock(EntityStateLogger.class);
         List<EntityOperation> entityOperations = getEntityHistoryLogs();
@@ -64,9 +61,10 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(LocalDateTime.now()).when(taskTransactionContext).getStartTime();
         Mockito.doReturn(Collections.EMPTY_LIST).when(taskTransactionContext).getAuditTransactionActivities();
         Mockito.doReturn(entityStateLogger).when(taskTransactionContext).getEntityStateLogger();
-        Mockito.doReturn(dataFactory.getTaskActivity()).when(taskTransactionContext).getTaskActivity();
 
-        Mockito.doReturn(dataFactory.getTask()).when(taskTransactionContext).getTask();
+        TaskActivity taskActivity = dataFactory.getTaskActivity();
+        Mockito.doReturn(taskActivity).when(taskTransactionContext).getTaskActivity();
+        Mockito.doReturn(taskActivity.getTask()).when(taskTransactionContext).getTask();
     }
 
     @AfterEach
@@ -77,7 +75,7 @@ class TaskTransactionLoggerTest extends EntityTest {
     @Test
     void saveUnitOfWork() {
 
-        taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.SUCCESSFUL);
+        taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.COMMITTED);
 
         assertEquals(1, taskTransactionRepository.count());
         assertEquals(3, entityStateRepository.count());
@@ -104,8 +102,8 @@ class TaskTransactionLoggerTest extends EntityTest {
         List<TaskActivity> taskActivities = Arrays.asList(dataFactory.getTaskActivity(false), dataFactory.getTaskActivity(false));
         Mockito.doReturn(taskActivities).when(taskTransactionContext).getAuditTransactionActivities();
 
-        TaskTransaction taskTransaction = taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.SUCCESSFUL);
-        assertEquals(TaskTransaction.Status.SUCCESSFUL, taskTransaction.getStatus());
+        TaskTransaction taskTransaction = taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.COMMITTED);
+        assertEquals(TaskTransaction.Status.COMMITTED, taskTransaction.getStatus());
         taskActivities
                 .forEach(taskActivity -> {
                     assertNotNull(taskActivity.getId());
@@ -113,29 +111,6 @@ class TaskTransactionLoggerTest extends EntityTest {
                     assertEquals(taskTransaction.getTaskActivity(), taskActivity.getParentActivity());
                     assertEquals(taskTransaction.getTask(), taskActivity.getTask());
                 });
-    }
-
-    @Test
-    void saveErrorInNewTransaction() {
-        Mockito.doCallRealMethod().when(transactionTemplate).execute(Mockito.any());
-
-        taskTransactionLogger.saveFailure(taskTransactionContext, TaskTransaction.Status.SUCCESSFUL);
-        Mockito.verify(transactionTemplate, Mockito.times(1))
-                .execute(Mockito.any());
-        Mockito.verify(taskTransactionContext, Mockito.times(1))
-                .getEntityStateLogger();
-        Mockito.verify(taskTransactionContext, Mockito.atLeast(1))
-                .getAuditTransactionActivities();
-        Mockito.verify(taskTransactionContext, Mockito.atLeast(1))
-                .getStartTime();
-    }
-
-    @Test
-    void shouldNotPropagateExceptionWhenSavingError() {
-        Mockito.doThrow(IllegalArgumentException.class).when(transactionTemplate).execute(Mockito.any());
-        taskTransactionLogger.saveFailure(null, TaskTransaction.Status.SUCCESSFUL);
-        Mockito.verify(transactionTemplate, Mockito.times(1))
-                .execute(Mockito.any());
     }
 
     @Test

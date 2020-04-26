@@ -5,11 +5,11 @@ import com.olaleyeone.audittrail.api.EntityOperation;
 import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.EntityState;
 import com.olaleyeone.audittrail.entity.EntityStateAttribute;
+import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.entity.TaskTransaction;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
@@ -22,7 +22,6 @@ public class TaskTransactionLogger {
     final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final EntityManager entityManager;
-    private final TransactionTemplate transactionTemplate;
 
     public TaskTransaction saveUnitOfWork(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
         TaskTransaction taskTransaction = createTaskTransaction(taskTransactionContext, status);
@@ -42,14 +41,14 @@ public class TaskTransactionLogger {
         TaskTransaction taskTransaction = new TaskTransaction();
         taskTransaction.setStatus(status);
 
-        taskTransaction.setTaskActivity(taskTransactionContext.getTaskActivity());
+        TaskActivity taskActivity = taskTransactionContext.getTaskActivity();
+        taskTransaction.setTask(taskActivity.getTask());
+        taskTransaction.setTaskActivity(taskActivity);
 
         taskTransaction.setDuration(Duration.builder()
                 .startedOn(taskTransactionContext.getStartTime())
                 .nanoSeconds(taskTransactionContext.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS))
                 .build());
-
-        taskTransaction.setTask(taskTransactionContext.getTask());
 
         entityManager.persist(taskTransaction);
         return taskTransaction;
@@ -81,16 +80,5 @@ public class TaskTransactionLogger {
 
         entityManager.persist(entityStateAttribute);
         return entityStateAttribute;
-    }
-
-    public void saveFailure(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
-        try {
-            transactionTemplate.execute(txStatus -> {
-                saveUnitOfWork(taskTransactionContext, status);
-                return null;
-            });
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
     }
 }

@@ -64,7 +64,7 @@ public class DataFactory {
                 .nanoSeconds(faker.number().randomNumber())
                 .build());
 
-        taskTransaction.setStatus(TaskTransaction.Status.SUCCESSFUL);
+        taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
         entityManager.persist(taskTransaction);
         return taskTransaction;
     }

@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.util.Collections;
-import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 @Transactional
 class TaskTransactionContextTest extends EntityTest {
@@ -23,45 +25,23 @@ class TaskTransactionContextTest extends EntityTest {
     private TaskTransactionLogger taskTransactionLogger;
     private EntityStateLogger entityStateLogger;
 
-    private TaskContext taskContext;
+    private TaskContextImpl taskContext;
 
     @BeforeEach
     void setUp() {
         taskTransactionLogger = Mockito.mock(TaskTransactionLogger.class);
         entityStateLogger = Mockito.mock(EntityStateLogger.class);
-        Task task = new Task();
         TaskActivity taskActivity = new TaskActivity();
-        taskContext = new TaskContext() {
-            @Override
-            public Task getTask() {
-                return task;
-            }
+        taskActivity.setTask(new Task());
+        taskContext = Mockito.spy(new TaskContextImpl(taskActivity, null));
+        Mockito.doNothing().when(taskContext).resume();
 
-            @Override
-            public Optional<TaskActivity> getTaskActivity() {
-                return Optional.of(taskActivity);
-            }
+        taskTransactionContext = new TaskTransactionContext(taskContext, taskTransactionLogger, entityStateLogger);
+    }
 
-            @Override
-            public void logActivity(TaskActivity taskActivity) {
-
-            }
-        };
-
-        taskTransactionContext = new TaskTransactionContext(taskTransactionLogger, entityStateLogger) {
-
-            @Override
-            public Task getTask() {
-                return task;
-            }
-
-            @Override
-            public TaskActivity getTaskActivity() {
-                return taskActivity;
-            }
-        };
-
-//        taskTransactionContext.getActivityLogger().log(faker.funnyName().name(), faker.backToTheFuture().quote());
+    @Test
+    void getEntityStateLogger() {
+        assertSame(entityStateLogger, taskTransactionContext.getEntityStateLogger());
     }
 
     @Test
@@ -75,90 +55,41 @@ class TaskTransactionContextTest extends EntityTest {
     void shouldSaveUpdates() {
         Mockito.doReturn(Collections.singletonList(Mockito.mock(EntityOperation.class))).when(entityStateLogger).getOperations();
         taskTransactionContext.beforeCommit(false);
-        Mockito.verify(taskTransactionLogger, Mockito.times(1)).saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.SUCCESSFUL);
+        Mockito.verify(taskTransactionLogger, Mockito.times(1))
+                .saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.COMMITTED);
     }
 
     @Test
     void shouldNotSaveErrorAfterCommit() {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_COMMITTED);
-        Mockito.verify(taskTransactionLogger, Mockito.never()).saveFailure(Mockito.any(), Mockito.any());
+        assertEquals(TaskTransaction.Status.COMMITTED, taskTransactionContext.getStatus());
+        Mockito.verify(taskContext, Mockito.never()).registerFailedTransaction(taskTransactionContext);
+        Mockito.verify(taskContext, Mockito.times(1)).resume();
     }
 
     @Test
     void shouldNotSaveErrorWhenNoActivityWasDone() {
-        TaskTransactionContext taskTransactionContext = getTaskTransactionContext(false);
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
-        Mockito.verify(taskTransactionLogger, Mockito.never()).saveFailure(Mockito.any(), Mockito.any());
+        assertEquals(TaskTransaction.Status.ROLLED_BACK, taskTransactionContext.getStatus());
+        Mockito.verify(taskContext, Mockito.never()).registerFailedTransaction(taskTransactionContext);
+        Mockito.verify(taskContext, Mockito.times(1)).resume();
     }
 
     @Test
     void shouldSaveErrorForRollback() {
-        taskTransactionContext.logActivity(new TaskActivity());
+        taskTransactionContext.addActivity(new TaskActivity());
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
-        Mockito.verify(taskTransactionLogger, Mockito.times(1))
-                .saveFailure(taskTransactionContext, TaskTransaction.Status.ROLLED_BACK);
+        assertEquals(TaskTransaction.Status.ROLLED_BACK, taskTransactionContext.getStatus());
+        Mockito.verify(taskContext, Mockito.times(1)).registerFailedTransaction(taskTransactionContext);
+        Mockito.verify(taskContext, Mockito.times(1)).resume();
     }
 
     @Test
     void shouldSaveErrorForUnknown() {
-        taskTransactionContext.logActivity(new TaskActivity());
+        taskTransactionContext.addActivity(new TaskActivity());
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_UNKNOWN);
-        Mockito.verify(taskTransactionLogger, Mockito.times(1))
-                .saveFailure(taskTransactionContext, TaskTransaction.Status.UNKNOWN);
-    }
-
-//    @Test
-//    void shouldRequireActivityLogBeforeCommitByDefault() {
-//        TaskTransactionContext taskTransactionContext = new TaskTransactionContext(null) {
-//            @Override
-//            public Task getTask() {
-//                return taskContext.getTask();
-//            }
-//
-//            @Override
-//            public Optional<TaskActivity> getTaskActivity() {
-//                return taskContext.getTaskActivity();
-//            }
-//        };
-//        assertFalse(taskTransactionContext.canCommitWithoutActivityLog());
-//    }
-
-//    @Test
-//    void shouldRequireActivityLogBeforeCommit() {
-//        TaskTransactionContext taskTransactionContext = getTaskTransactionContext(false);
-//        assertThrows(NoActivityLogException.class, () -> taskTransactionContext.beforeCommit(false));
-//    }
-
-//    @Test
-//    void shouldRequireActivityLogBeforeStateUpdate() {
-//        TaskTransactionContext taskTransactionContext = getTaskTransactionContext(false);
-//        assertThrows(NoActivityLogException.class, () -> taskTransactionContext.getEntityStateLogger());
-//    }
-
-    @Test
-    void shouldNotRequireActivityLog_IfCanCommitWithoutActivityLog() {
-        TaskTransactionContext taskTransactionContext = getTaskTransactionContext(true);
-        taskTransactionContext.beforeCommit(false);
-    }
-
-    @Test
-    void shouldNotRequireActivityLogBeforeStateUpdate_IfCanCommitWithoutActivityLog() {
-        TaskTransactionContext taskTransactionContext = getTaskTransactionContext(true);
-        taskTransactionContext.getEntityStateLogger();
-    }
-
-    private TaskTransactionContext getTaskTransactionContext(boolean canCommitWithoutActivityLog) {
-        return new TaskTransactionContext(taskTransactionLogger) {
-
-            @Override
-            public Task getTask() {
-                return taskContext.getTask();
-            }
-
-            @Override
-            public TaskActivity getTaskActivity() {
-                return taskContext.getTaskActivity().get();
-            }
-        };
+        assertEquals(TaskTransaction.Status.UNKNOWN, taskTransactionContext.getStatus());
+        Mockito.verify(taskContext, Mockito.times(1)).registerFailedTransaction(taskTransactionContext);
+        Mockito.verify(taskContext, Mockito.times(1)).resume();
     }
 }

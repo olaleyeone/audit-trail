@@ -19,9 +19,6 @@ public class TaskTransaction {
     @ManyToOne(optional = false)
     private TaskActivity taskActivity;
 
-    @OneToOne
-    private TaskActivity causeOfFailure;
-
     @Embedded
     private Duration duration;
 
@@ -30,6 +27,6 @@ public class TaskTransaction {
     private Status status;
 
     public static enum Status {
-        SUCCESSFUL, ROLLED_BACK, UNKNOWN
+        COMMITTED, ROLLED_BACK, UNKNOWN
     }
 }

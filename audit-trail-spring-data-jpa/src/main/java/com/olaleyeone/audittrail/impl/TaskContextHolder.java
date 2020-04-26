@@ -2,18 +2,18 @@ package com.olaleyeone.audittrail.impl;
 
 import org.springframework.beans.factory.FactoryBean;
 
-public class TaskContextHolder implements FactoryBean<TaskContext> {
+public class TaskContextHolder implements FactoryBean<TaskContextImpl> {
 
-    private static final ThreadLocal<TaskContext> taskContextThreadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<TaskContextImpl> taskContextThreadLocal = new ThreadLocal<>();
 
     @Override
-    public TaskContext getObject() {
+    public TaskContextImpl getObject() {
         return taskContextThreadLocal.get();
     }
 
     @Override
     public Class<?> getObjectType() {
-        return TaskContext.class;
+        return TaskContextImpl.class;
     }
 
     @Override
@@ -21,7 +21,7 @@ public class TaskContextHolder implements FactoryBean<TaskContext> {
         return false;
     }
 
-    public void registerContext(TaskContext taskContext) {
+    public void registerContext(TaskContextImpl taskContext) {
         taskContextThreadLocal.set(taskContext);
     }
 }

@@ -1,37 +1,35 @@
 package com.olaleyeone.audittrail.impl;
 
-import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.error.NoTaskActivityException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Provider;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.function.Supplier;
 
-@RequiredArgsConstructor
 public class TaskTransactionContextFactory implements FactoryBean<TaskTransactionContext> {
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Autowired
-    private TransactionTemplate transactionTemplate;
-
-    @Autowired
-    private Provider<TaskContext> taskContextProvider;
+    private final TaskContextHolder taskContextHolder;
 
     private TaskTransactionLogger taskTransactionLogger;
 
+    public TaskTransactionContextFactory(TaskContextHolder taskContextHolder) {
+        this.taskContextHolder = taskContextHolder;
+    }
+
     @PostConstruct
     public void init() {
-        taskTransactionLogger = new TaskTransactionLogger(entityManager, transactionTemplate);
+        taskTransactionLogger = new TaskTransactionLogger(entityManager);
     }
 
     @Override
@@ -53,20 +51,24 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
     }
 
     public TaskTransactionContext createTaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
-        TaskContext taskContext = taskContextProvider.get();
-        TaskActivity taskActivity = taskContext.getTaskActivity().orElseThrow(NoTaskActivityException::new);
-        return new TaskTransactionContext(taskTransactionLogger) {
+        TaskContextImpl taskContext = taskContextHolder.getObject();
+        TaskActivity parentTaskActivity = taskContext.getTaskActivity().orElseThrow(NoTaskActivityException::new);
+
+        TaskTransactionContext taskTransactionContext = new TaskTransactionContext(taskContext, taskTransactionLogger);
+
+        TaskContextImpl wrapperContext = new TaskContextImpl(parentTaskActivity, taskContextHolder) {
 
             @Override
-            public Task getTask() {
-                return taskActivity.getTask();
-            }
-
-            @Override
-            public TaskActivity getTaskActivity() {
-                return taskActivity;
+            protected <E> E startActivity(TaskActivity taskActivity, Supplier<E> action, LocalDateTime now) {
+                taskTransactionContext.addActivity(taskActivity);
+                taskActivity.setPrecedence(taskContext.getTaskActivities().size() + 1);
+                taskContext.getTaskActivities().add(taskActivity);
+                return super.startActivity(taskActivity, action, now);
             }
         };
+        taskContextHolder.registerContext(wrapperContext);
+
+        return taskTransactionContext;
     }
 
     @Override

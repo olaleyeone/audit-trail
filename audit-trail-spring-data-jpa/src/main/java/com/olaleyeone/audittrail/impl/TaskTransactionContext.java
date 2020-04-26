@@ -16,78 +16,67 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public abstract class TaskTransactionContext implements TransactionSynchronization {
+public class TaskTransactionContext implements TransactionSynchronization {
 
     @Getter(AccessLevel.NONE)
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final LocalDateTime startTime = LocalDateTime.now();
     private final List<TaskActivity> auditTransactionActivities = new ArrayList<>();
 
+    private final TaskContextImpl taskContext;
     private final TaskTransactionLogger taskTransactionLogger;
     private final EntityStateLogger entityStateLogger;
 
-//    @Getter(lazy = true)
-//    private final ActivityLogger activityLogger = new ActivityLoggerImpl(auditTransactionActivities);
+    private TaskTransaction.Status status;
 
-
-    public TaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
-        this(taskTransactionLogger, new EntityStateLoggerImpl());
+    public TaskTransactionContext(TaskContextImpl taskContext, TaskTransactionLogger taskTransactionLogger) {
+        this(taskContext, taskTransactionLogger, new EntityStateLoggerImpl());
     }
 
-    public TaskTransactionContext(TaskTransactionLogger taskTransactionLogger, EntityStateLogger entityStateLogger) {
+    public TaskTransactionContext(TaskContextImpl taskContext, TaskTransactionLogger taskTransactionLogger, EntityStateLogger entityStateLogger) {
+        this.taskContext = taskContext;
         this.taskTransactionLogger = taskTransactionLogger;
         this.entityStateLogger = entityStateLogger;
     }
 
-//    public ActivityLogger createActivityLogger(List<TaskActivity> auditTrailActivities) {
-//        return new ActivityLoggerImpl(auditTrailActivities);
-//    }
-
-    public abstract Task getTask();
-
-    public abstract TaskActivity getTaskActivity();
-
-    public void logActivity(TaskActivity taskActivity) {
+    public void addActivity(TaskActivity taskActivity) {
         this.auditTransactionActivities.add(taskActivity);
     }
 
-//    public boolean canCommitWithoutActivityLog() {
-//        return false;
-//    }
-
     public EntityStateLogger getEntityStateLogger() {
-//        checkHasActivityLog();
         return entityStateLogger;
     }
 
     @Override
     public void beforeCommit(boolean readOnly) {
-//        checkHasActivityLog();
         List<EntityOperation> logs = entityStateLogger.getOperations();
         if (logs.isEmpty()) {
             logger.warn("No work done in transaction");
             return;
         }
-        taskTransactionLogger.saveUnitOfWork(this, TaskTransaction.Status.SUCCESSFUL);
+        taskTransactionLogger.saveUnitOfWork(this, TaskTransaction.Status.COMMITTED);
     }
 
     @Override
     public void afterCompletion(int status) {
-        if (status == TransactionSynchronization.STATUS_COMMITTED || auditTransactionActivities.isEmpty()) {
-            return;
+        if (status == TransactionSynchronization.STATUS_COMMITTED) {
+            this.status = TaskTransaction.Status.COMMITTED;
+        } else {
+            this.status = status == TransactionSynchronization.STATUS_ROLLED_BACK
+                    ? TaskTransaction.Status.ROLLED_BACK
+                    : TaskTransaction.Status.UNKNOWN;
+            if (!auditTransactionActivities.isEmpty()) {
+                taskContext.registerFailedTransaction(this);
+            }
         }
-        taskTransactionLogger.saveFailure(this, status == TransactionSynchronization.STATUS_ROLLED_BACK
-                ? TaskTransaction.Status.ROLLED_BACK
-                : TaskTransaction.Status.UNKNOWN);
+        taskContext.resume();
     }
 
-//    private void checkHasActivityLog() {
-//        if (!auditTransactionActivities.isEmpty()) {
-//            return;
-//        }
-//        if (!canCommitWithoutActivityLog()) {
-//            throw new NoActivityLogException();
-//        }
-//        logger.warn("No activity log");
-//    }
+    public Task getTask() {
+        return this.taskContext.getTask();
+    }
+
+    public TaskActivity getTaskActivity() {
+        return this.taskContext.getTaskActivity().get();
+    }
 }

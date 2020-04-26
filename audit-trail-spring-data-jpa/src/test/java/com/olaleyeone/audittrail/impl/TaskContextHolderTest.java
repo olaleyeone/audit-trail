@@ -17,7 +17,7 @@ class TaskContextHolderTest {
 
     @Test
     void getObject() {
-        TaskContext mock = Mockito.mock(TaskContext.class);
+        TaskContextImpl mock = Mockito.mock(TaskContextImpl.class);
         taskContextHolder.registerContext(mock);
         assertSame(mock, taskContextHolder.getObject());
     }
@@ -29,6 +29,6 @@ class TaskContextHolderTest {
 
     @Test
     void getObjectType() {
-        assertEquals(TaskContext.class, taskContextHolder.getObjectType());
+        assertEquals(TaskContextImpl.class, taskContextHolder.getObjectType());
     }
 }
