@@ -2,6 +2,8 @@ package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.error.NoTaskActivityException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -13,6 +15,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class TaskTransactionContextFactory implements FactoryBean<TaskTransactionContext> {
+
+    final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -40,6 +44,13 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
                 });
     }
 
+    public void initialize() {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        getObject();
+    }
+
     private Optional<TaskTransactionContext> getCurrentTaskTransactionLogger() {
         return TransactionSynchronizationManager.getSynchronizations()
                 .stream()
@@ -63,7 +74,7 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
                 return super.startActivity(taskActivity, action, now);
             }
         };
-        taskContextHolder.registerContext(wrapperContext);
+        wrapperContext.start(taskContext);
 
         return taskTransactionContext;
     }

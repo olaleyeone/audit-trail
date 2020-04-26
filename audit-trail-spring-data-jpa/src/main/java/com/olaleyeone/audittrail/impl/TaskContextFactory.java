@@ -8,7 +8,7 @@ public class TaskContextFactory {
 
     private final TaskContextHolder taskContextHolder;
 
-    TaskContextImpl createContext(Task task) {
+    public TaskContextImpl start(Task task) {
         TaskContextImpl taskContext = new TaskContextImpl(task, null, taskContextHolder);
         taskContextHolder.registerContext(taskContext);
         return taskContext;

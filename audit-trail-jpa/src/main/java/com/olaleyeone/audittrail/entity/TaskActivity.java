@@ -13,10 +13,10 @@ public class TaskActivity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, cascade = CascadeType.PERSIST)
     private Task task;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private TaskActivity parentActivity;
 
     @ManyToOne

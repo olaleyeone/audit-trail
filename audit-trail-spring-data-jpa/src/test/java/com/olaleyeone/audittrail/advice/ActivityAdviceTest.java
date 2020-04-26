@@ -7,6 +7,7 @@ import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.impl.TaskContextHolder;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
+import com.olaleyeone.audittrail.impl.TaskTransactionContextFactory;
 import lombok.NoArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -33,7 +34,7 @@ class ActivityAdviceTest extends ComponentTest {
     @BeforeEach
     public void setUp() throws NoSuchMethodException {
         taskContextHolder = new TaskContextHolder();
-        activityAdvice = new ActivityAdvice(taskContextHolder);
+        activityAdvice = new ActivityAdvice(taskContextHolder, Mockito.mock(TaskTransactionContextFactory.class));
 
         proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         Object[] args = new Object[]{new Object()};

@@ -23,7 +23,7 @@ class TaskContextFactoryTest extends ComponentTest {
     @Test
     void createContext() {
         Task task = new Task();
-        TaskContext context = taskContextFactory.createContext(task);
+        TaskContext context = taskContextFactory.start(task);
         assertNotNull(context);
         assertSame(context, taskContextHolder.getObject());
     }
@@ -31,7 +31,7 @@ class TaskContextFactoryTest extends ComponentTest {
     @Test
     void testTwoLevels() {
         Task task = new Task();
-        TaskContextImpl context1 = taskContextFactory.createContext(task);
+        TaskContextImpl context1 = taskContextFactory.start(task);
         TaskActivity child = context1.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             TaskContextImpl context2 = taskContextHolder.getObject();
             assertNotSame(context1, context2);
@@ -46,7 +46,7 @@ class TaskContextFactoryTest extends ComponentTest {
     void testSetDescription() {
         String description = faker.lordOfTheRings().location();
         Task task = new Task();
-        TaskContextImpl context1 = taskContextFactory.createContext(task);
+        TaskContextImpl context1 = taskContextFactory.start(task);
         TaskActivity child = context1.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             TaskContextImpl context2 = taskContextHolder.getObject();
             context2.setDescription(description);
@@ -58,7 +58,7 @@ class TaskContextFactoryTest extends ComponentTest {
     @Test
     void testThreeLevels() {
         Task task = new Task();
-        TaskContextImpl context1 = taskContextFactory.createContext(task);
+        TaskContextImpl context1 = taskContextFactory.start(task);
         context1.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             TaskContextImpl context2 = taskContextHolder.getObject();
             context2.execute(faker.lordOfTheRings().location(), () -> {
@@ -77,7 +77,7 @@ class TaskContextFactoryTest extends ComponentTest {
     @Test
     void testActivityError() {
         Task task = new Task();
-        TaskContextImpl context1 = taskContextFactory.createContext(task);
+        TaskContextImpl context1 = taskContextFactory.start(task);
         assertThrows(RuntimeException.class, () -> context1.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             throw new RuntimeException();
         }));

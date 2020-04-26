@@ -8,6 +8,7 @@ package com.olaleyeone.audittrail.advice;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
 import com.olaleyeone.audittrail.api.EntityStateLogger;
+import com.olaleyeone.audittrail.impl.TaskTransactionContext;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -25,14 +26,14 @@ public class EntityManagerAdvice implements EntityManagerPointcut {
 
     private final EntityDataExtractor entityDataExtractor;
 
-    private final Provider<EntityStateLogger> entityUpdateLogProvider;
+    private final Provider<TaskTransactionContext> transactionContextProvider;
 
     @Around("persist()")
     public Object adviceEntityCreation(ProceedingJoinPoint jp) throws Throwable {
         Object result = jp.proceed(jp.getArgs());
         Object entity = jp.getArgs()[0];
 
-        EntityStateLogger entityStateLogger = entityUpdateLogProvider.get();
+        EntityStateLogger entityStateLogger = transactionContextProvider.get().getEntityStateLogger();
         EntityIdentifier entityIdentifier = entityDataExtractor.getIdentifier(entity);
         entityStateLogger.registerNewEntity(entityIdentifier);
         entityStateLogger.setCurrentState(entityIdentifier, entityDataExtractor.extractAttributes(entity));
@@ -45,7 +46,7 @@ public class EntityManagerAdvice implements EntityManagerPointcut {
         Object entity = jp.getArgs()[0];
 
         EntityIdentifier entityIdentifier = entityDataExtractor.getIdentifier(entity);
-        EntityStateLogger entityStateLogger = entityUpdateLogProvider.get();
+        EntityStateLogger entityStateLogger = transactionContextProvider.get().getEntityStateLogger();
         if (!entityStateLogger.isNew(entityIdentifier) && !entityStateLogger.isPreviousStateLoaded(entityIdentifier)) {
             Object loadedEntity = entityDataExtractor.getEntityBeforeOperation(entityIdentifier);
             entityStateLogger.setPreviousState(entityIdentifier, entityDataExtractor.extractAttributes(loadedEntity));
@@ -61,7 +62,7 @@ public class EntityManagerAdvice implements EntityManagerPointcut {
         Object result = jp.proceed(jp.getArgs());
         Object entity = jp.getArgs()[0];
 
-        EntityStateLogger entityStateLogger = entityUpdateLogProvider.get();
+        EntityStateLogger entityStateLogger = transactionContextProvider.get().getEntityStateLogger();
         entityStateLogger.registerDeletedEntity(entityDataExtractor.getIdentifier(entity));
 
         return result;

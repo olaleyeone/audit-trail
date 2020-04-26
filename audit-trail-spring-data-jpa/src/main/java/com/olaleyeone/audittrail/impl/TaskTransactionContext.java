@@ -54,7 +54,7 @@ public class TaskTransactionContext implements TransactionSynchronization {
             logger.warn("No work done in transaction");
             return;
         }
-        taskTransactionLogger.saveUnitOfWork(this, TaskTransaction.Status.COMMITTED);
+        taskTransactionLogger.saveTaskTransaction(this, TaskTransaction.Status.COMMITTED);
     }
 
     @Override
@@ -69,14 +69,14 @@ public class TaskTransactionContext implements TransactionSynchronization {
                 taskContext.registerFailedTransaction(this);
             }
         }
-        taskContext.resume();
+        taskContext.end();
     }
 
     public Task getTask() {
-        return this.taskContext.getTask();
+        return taskContext.getTask();
     }
 
     public TaskActivity getTaskActivity() {
-        return this.taskContext.getTaskActivity().get();
+        return taskContext.getTaskActivity().get();
     }
 }

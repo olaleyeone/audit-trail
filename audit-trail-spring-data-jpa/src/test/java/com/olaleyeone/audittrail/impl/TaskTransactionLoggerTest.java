@@ -75,7 +75,7 @@ class TaskTransactionLoggerTest extends EntityTest {
     @Test
     void saveUnitOfWork() {
 
-        taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.COMMITTED);
+        taskTransactionLogger.saveTaskTransaction(taskTransactionContext, TaskTransaction.Status.COMMITTED);
 
         assertEquals(1, taskTransactionRepository.count());
         assertEquals(3, entityStateRepository.count());
@@ -102,7 +102,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         List<TaskActivity> taskActivities = Arrays.asList(dataFactory.getTaskActivity(false), dataFactory.getTaskActivity(false));
         Mockito.doReturn(taskActivities).when(taskTransactionContext).getAuditTransactionActivities();
 
-        TaskTransaction taskTransaction = taskTransactionLogger.saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.COMMITTED);
+        TaskTransaction taskTransaction = taskTransactionLogger.saveTaskTransaction(taskTransactionContext, TaskTransaction.Status.COMMITTED);
         assertEquals(TaskTransaction.Status.COMMITTED, taskTransaction.getStatus());
         taskActivities
                 .forEach(taskActivity -> {

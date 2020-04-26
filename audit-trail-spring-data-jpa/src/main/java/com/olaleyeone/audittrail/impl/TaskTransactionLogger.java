@@ -23,16 +23,20 @@ public class TaskTransactionLogger {
 
     private final EntityManager entityManager;
 
-    public TaskTransaction saveUnitOfWork(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
+    public TaskTransaction saveTaskTransaction(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
         TaskTransaction taskTransaction = createTaskTransaction(taskTransactionContext, status);
-        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
 
-        taskTransactionContext.getAuditTransactionActivities().forEach(taskActivity -> {
-            taskActivity.setId(null);
-            taskActivity.setTask(taskTransaction.getTask());
-            taskActivity.setParentActivity(taskTransaction.getTaskActivity());
-            taskActivity.setTaskTransaction(taskTransaction);
-            entityManager.persist(taskActivity);
+        TaskActivity taskActivity = taskTransaction.getTaskActivity();
+
+        taskTransactionContext.getEntityStateLogger().getOperations()
+                .forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
+
+        taskTransactionContext.getAuditTransactionActivities().forEach(activityInTransaction -> {
+            activityInTransaction.setId(null);
+            activityInTransaction.setTask(taskTransaction.getTask());
+            activityInTransaction.setParentActivity(taskActivity);
+            activityInTransaction.setTaskTransaction(taskTransaction);
+            entityManager.persist(activityInTransaction);
         });
         return taskTransaction;
     }
@@ -42,6 +46,7 @@ public class TaskTransactionLogger {
         taskTransaction.setStatus(status);
 
         TaskActivity taskActivity = taskTransactionContext.getTaskActivity();
+
         taskTransaction.setTask(taskActivity.getTask());
         taskTransaction.setTaskActivity(taskActivity);
 

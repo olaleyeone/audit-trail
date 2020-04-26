@@ -34,7 +34,7 @@ class TaskTransactionContextTest extends EntityTest {
         TaskActivity taskActivity = new TaskActivity();
         taskActivity.setTask(new Task());
         taskContext = Mockito.spy(new TaskContextImpl(taskActivity, null));
-        Mockito.doNothing().when(taskContext).resume();
+        Mockito.doNothing().when(taskContext).end();
 
         taskTransactionContext = new TaskTransactionContext(taskContext, taskTransactionLogger, entityStateLogger);
     }
@@ -48,7 +48,7 @@ class TaskTransactionContextTest extends EntityTest {
     void shouldIgnoreNoUpdate() {
         Mockito.doReturn(Collections.EMPTY_LIST).when(entityStateLogger).getOperations();
         taskTransactionContext.beforeCommit(false);
-        Mockito.verify(taskTransactionLogger, Mockito.never()).saveUnitOfWork(Mockito.any(), Mockito.any());
+        Mockito.verify(taskTransactionLogger, Mockito.never()).saveTaskTransaction(Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -56,7 +56,7 @@ class TaskTransactionContextTest extends EntityTest {
         Mockito.doReturn(Collections.singletonList(Mockito.mock(EntityOperation.class))).when(entityStateLogger).getOperations();
         taskTransactionContext.beforeCommit(false);
         Mockito.verify(taskTransactionLogger, Mockito.times(1))
-                .saveUnitOfWork(taskTransactionContext, TaskTransaction.Status.COMMITTED);
+                .saveTaskTransaction(taskTransactionContext, TaskTransaction.Status.COMMITTED);
     }
 
     @Test
@@ -64,7 +64,7 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_COMMITTED);
         assertEquals(TaskTransaction.Status.COMMITTED, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.never()).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).resume();
+        Mockito.verify(taskContext, Mockito.times(1)).end();
     }
 
     @Test
@@ -72,7 +72,7 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
         assertEquals(TaskTransaction.Status.ROLLED_BACK, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.never()).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).resume();
+        Mockito.verify(taskContext, Mockito.times(1)).end();
     }
 
     @Test
@@ -81,7 +81,7 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
         assertEquals(TaskTransaction.Status.ROLLED_BACK, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.times(1)).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).resume();
+        Mockito.verify(taskContext, Mockito.times(1)).end();
     }
 
     @Test
@@ -90,6 +90,6 @@ class TaskTransactionContextTest extends EntityTest {
         taskTransactionContext.afterCompletion(TransactionSynchronization.STATUS_UNKNOWN);
         assertEquals(TaskTransaction.Status.UNKNOWN, taskTransactionContext.getStatus());
         Mockito.verify(taskContext, Mockito.times(1)).registerFailedTransaction(taskTransactionContext);
-        Mockito.verify(taskContext, Mockito.times(1)).resume();
+        Mockito.verify(taskContext, Mockito.times(1)).end();
     }
 }

@@ -6,10 +6,9 @@ import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.CodeInstruction;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -23,9 +22,14 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class TaskContextImpl implements TaskContext {
 
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     private final Task task;
     private final TaskActivity taskActivity;
     private final TaskContextHolder taskContextHolder;
+
+    @Setter(AccessLevel.NONE)
+    private Optional<TaskContextImpl> parent;
 
     @Getter(value = AccessLevel.NONE)
     private final List<TaskActivity> taskActivities = new ArrayList<>();
@@ -78,7 +82,8 @@ public class TaskContextImpl implements TaskContext {
     }
 
     protected <E> E startActivity(TaskActivity taskActivity, Supplier<E> action, LocalDateTime now) {
-        taskContextHolder.registerContext(new TaskContextImpl(taskActivity, taskContextHolder));
+        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder);
+        taskContext.start(this);
 
         E result;
         try {
@@ -93,7 +98,7 @@ public class TaskContextImpl implements TaskContext {
                     .startedOn(now)
                     .nanoSeconds(now.until(LocalDateTime.now(), ChronoUnit.NANOS))
                     .build());
-            this.resume();
+            taskContext.end();
         }
     }
 
@@ -115,7 +120,12 @@ public class TaskContextImpl implements TaskContext {
         failedTaskTransactionContexts.add(taskTransactionContext);
     }
 
-    public void resume() {
+    public void start(TaskContextImpl parent) {
+        this.parent = Optional.of(parent);
         taskContextHolder.registerContext(this);
+    }
+
+    public void end() {
+        taskContextHolder.registerContext(parent.orElse(null));
     }
 }

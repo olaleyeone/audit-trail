@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Provider;
@@ -67,6 +68,19 @@ class TaskTransactionContextFactoryTest extends EntityTest {
         TaskTransactionContext taskTransactionContext1 = taskTransactionContextProvider.get();
         TaskTransactionContext taskTransactionContext2 = transactionTemplate.execute(status -> taskTransactionContextProvider.get());
         assertSame(taskTransactionContext1, taskTransactionContext2);
+    }
+
+    @Transactional
+    @Test
+    void initializeInTransaction() {
+        assertTrue(TransactionSynchronizationManager.getSynchronizations().isEmpty());
+        taskTransactionContextFactory.initialize();
+        assertFalse(TransactionSynchronizationManager.getSynchronizations().isEmpty());
+    }
+
+    @Test
+    void initializeOutsideTransactionShouldBeSilent() {
+        taskTransactionContextFactory.initialize();
     }
 
     @Test
