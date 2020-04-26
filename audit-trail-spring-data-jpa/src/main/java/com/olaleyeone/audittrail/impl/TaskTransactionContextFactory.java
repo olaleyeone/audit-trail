@@ -3,9 +3,7 @@ package com.olaleyeone.audittrail.impl;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.error.NoTaskActivityException;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
@@ -61,8 +59,7 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
             @Override
             protected <E> E startActivity(TaskActivity taskActivity, Supplier<E> action, LocalDateTime now) {
                 taskTransactionContext.addActivity(taskActivity);
-                taskActivity.setPrecedence(taskContext.getTaskActivities().size() + 1);
-                taskContext.getTaskActivities().add(taskActivity);
+                taskContext.addActivity(taskActivity);
                 return super.startActivity(taskActivity, action, now);
             }
         };

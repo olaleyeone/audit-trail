@@ -20,13 +20,13 @@ import static org.mockito.Mockito.inOrder;
 
 class EntityManagerAdviceTest extends ComponentTest {
 
-    private EntityManagerAdvice entityManagerAdvice;
-
     @Mock
     private EntityDataExtractor entityDataExtractor;
 
     @Mock
     private EntityStateLogger entityStateLogger;
+
+    private EntityManagerAdvice entityManagerAdvice;
 
     private EntityIdentifier entityIdentifier;
 

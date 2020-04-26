@@ -88,13 +88,18 @@ class TaskTransactionContextFactoryTest extends EntityTest {
 
     @Test
     void testCreateTaskTransactionContext2() {
-        Mockito.doReturn(new ArrayList<>()).when(taskContext).getTaskActivities();
+        ArrayList<Object> list = new ArrayList<>();
+        Mockito.doReturn(list).when(taskContext).getTaskActivities();
+        Mockito.doAnswer(invocation -> {
+            list.add(invocation.getArgument(0));
+            return null;
+        }).when(taskContext).addActivity(Mockito.any());
         taskContextHolder.registerContext(taskContext);
 
         TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.createTaskTransactionContext(null);
         TaskContextImpl currentTaskContext = taskContextHolder.getObject();
         assertNotSame(taskContext, currentTaskContext);
-        currentTaskContext.doAndReturn(faker.lordOfTheRings().location(), () -> null);
+        currentTaskContext.execute(faker.lordOfTheRings().location(), () -> null);
         assertEquals(1, taskTransactionContext.getAuditTransactionActivities().size());
         assertEquals(1, taskContext.getTaskActivities().size());
     }

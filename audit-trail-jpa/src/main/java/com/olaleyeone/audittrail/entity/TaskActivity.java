@@ -1,7 +1,6 @@
 package com.olaleyeone.audittrail.entity;
 
 import com.olaleyeone.audittrail.embeddable.Duration;
-import com.olaleyeone.audittrail.embeddable.TaskActivityEntryPoint;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -31,8 +30,8 @@ public class TaskActivity {
     @Column(nullable = false)
     private Integer precedence;
 
-    @Embedded
-    private TaskActivityEntryPoint entryPoint;
+    @OneToOne(cascade = CascadeType.PERSIST)
+    private CodeInstruction entryPoint;
 
     @Embedded
     private Duration duration;
@@ -40,6 +39,11 @@ public class TaskActivity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskActivity.Status status;
+
+    private String failureType;
+    private String failureReason;
+    @ManyToOne(cascade = CascadeType.PERSIST)
+    private CodeInstruction failurePoint;
 
     public static enum Status {
         SUCCESSFUL, FAILED, IN_PROGRESS
