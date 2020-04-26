@@ -18,9 +18,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.inOrder;
 
-class TaskTransactionAdviceTest extends ComponentTest {
+class EntityManagerAdviceTest extends ComponentTest {
 
-    private AuditTrailAdvice auditTrailAdvice;
+    private EntityManagerAdvice entityManagerAdvice;
 
     @Mock
     private EntityDataExtractor entityDataExtractor;
@@ -32,7 +32,7 @@ class TaskTransactionAdviceTest extends ComponentTest {
 
     @BeforeEach
     public void setUp() {
-        auditTrailAdvice = new AuditTrailAdvice(entityDataExtractor, new Provider<EntityStateLogger>() {
+        entityManagerAdvice = new EntityManagerAdvice(entityDataExtractor, new Provider<EntityStateLogger>() {
 
             @Override
             public EntityStateLogger get() {
@@ -53,7 +53,7 @@ class TaskTransactionAdviceTest extends ComponentTest {
         Map<String, AuditData> data = Mockito.mock(Map.class);
         Mockito.doReturn(data).when(entityDataExtractor).extractAttributes(Mockito.any());
 
-        auditTrailAdvice.adviceEntityCreation(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityCreation(proceedingJoinPoint);
 
         Mockito.verify(proceedingJoinPoint, Mockito.times(1))
                 .proceed(args);
@@ -80,7 +80,7 @@ class TaskTransactionAdviceTest extends ComponentTest {
         Map<String, AuditData> data = Mockito.mock(Map.class);
         Mockito.doReturn(data).when(entityDataExtractor).extractAttributes(Mockito.any());
 
-        Object actualResult = auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        Object actualResult = entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
         assertSame(expectedResult, actualResult);
 
         Mockito.verify(proceedingJoinPoint, Mockito.times(1))
@@ -115,7 +115,7 @@ class TaskTransactionAdviceTest extends ComponentTest {
 
         InOrder inOrder = inOrder(proceedingJoinPoint, entityDataExtractor, entityStateLogger);
 
-        auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
 
         inOrder.verify(entityStateLogger, Mockito.times(1))
                 .isNew(entityIdentifier);
@@ -142,7 +142,7 @@ class TaskTransactionAdviceTest extends ComponentTest {
 
         Mockito.doReturn(true).when(entityStateLogger).isNew(Mockito.any());
 
-        auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
 
         Mockito.verify(entityStateLogger, Mockito.never())
                 .setPreviousState(Mockito.any(), Mockito.any());
@@ -159,7 +159,7 @@ class TaskTransactionAdviceTest extends ComponentTest {
         Mockito.doReturn(false).when(entityStateLogger).isNew(Mockito.any());
         Mockito.doReturn(true).when(entityStateLogger).isPreviousStateLoaded(Mockito.any());
 
-        auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
 
         Mockito.verify(entityStateLogger, Mockito.never())
                 .setPreviousState(Mockito.any(), Mockito.any());
@@ -173,7 +173,7 @@ class TaskTransactionAdviceTest extends ComponentTest {
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
 
-        auditTrailAdvice.adviceEntityDelete(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityDelete(proceedingJoinPoint);
 
         Mockito.verify(proceedingJoinPoint, Mockito.times(1))
                 .proceed(args);

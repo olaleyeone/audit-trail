@@ -19,7 +19,7 @@ import javax.inject.Provider;
 
 @RequiredArgsConstructor
 @Aspect
-public class AuditTrailAdvice implements EntityManagerPointcut {
+public class EntityManagerAdvice implements EntityManagerPointcut {
 
     final Logger logger = LoggerFactory.getLogger(this.getClass());
 

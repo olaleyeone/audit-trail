@@ -2,7 +2,7 @@ package com.olaleyeone.audittrail.impl;
 
 import com.olalayeone.audittrailtest.DataFactory;
 import com.olalayeone.audittrailtest.EntityTest;
-import com.olaleyeone.audittrail.advice.AuditTrailAdvice;
+import com.olaleyeone.audittrail.advice.EntityManagerAdvice;
 import com.olaleyeone.audittrail.api.*;
 import com.olaleyeone.audittrail.entity.*;
 import com.olaleyeone.audittrail.repository.EntityStateAttributeRepository;
@@ -40,7 +40,7 @@ class TaskTransactionLoggerTest extends EntityTest {
     private EntityStateAttributeRepository entityStateAttributeRepository;
 
     @Autowired
-    private AuditTrailAdvice auditTrailAdvice;
+    private EntityManagerAdvice entityManagerAdvice;
 
     @Autowired
     private DataFactory dataFactory;
@@ -69,7 +69,7 @@ class TaskTransactionLoggerTest extends EntityTest {
 
     @AfterEach
     public void afterEach() throws Throwable {
-        Mockito.verify(auditTrailAdvice, Mockito.never()).adviceEntityCreation(Mockito.any());
+        Mockito.verify(entityManagerAdvice, Mockito.never()).adviceEntityCreation(Mockito.any());
     }
 
     @Test

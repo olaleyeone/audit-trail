@@ -1,10 +1,8 @@
 package com.olalayeone.audittrailtest;
 
-import com.olaleyeone.audittrail.advice.AuditTrailAdvice;
+import com.olaleyeone.audittrail.advice.EntityManagerAdvice;
 import com.olaleyeone.audittrail.impl.*;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.FactoryBean;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
@@ -16,8 +14,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class TestApplication {
 
     @Bean
-    public AuditTrailAdvice auditTrailAdvice() {
-        return Mockito.mock(AuditTrailAdvice.class);
+    public EntityManagerAdvice auditTrailAdvice() {
+        return Mockito.mock(EntityManagerAdvice.class);
     }
 
     @Bean

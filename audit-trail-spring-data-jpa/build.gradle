@@ -20,8 +20,6 @@ jacocoTestCoverageVerification {
                 minimum = 0.95
             }
             excludes = [
-                    'com.olaleyeone.audittrail.entity.Q*',
-                    'com.olaleyeone.audittrail.embeddable.Q*'
             ]
         }
     }
@@ -30,16 +28,18 @@ check.dependsOn jacocoTestCoverageVerification
 
 dependencies {
     api(project(":${projectName}-api"))
+    api(project(":${projectName}-jpa"))
     implementation "org.hibernate.javax.persistence:hibernate-jpa-2.1-api:$hibernateJpaVersion"
     implementation "javax.inject:javax.inject:1"
     implementation "org.springframework.data:spring-data-jpa:$springDataVersion"
     implementation "org.aspectj:aspectjweaver:1.9.5"
     implementation "org.slf4j:slf4j-api:1.7.30"
 
-    compileOnly "com.querydsl:querydsl-jpa:${queryDslVersion}"
     annotationProcessor("com.querydsl:querydsl-apt:${queryDslVersion}:jpa")
     annotationProcessor("org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}")
-    compileOnly "javax.annotation:javax.annotation-api:1.3.2"
+
+    testCompileOnly "com.querydsl:querydsl-jpa:${queryDslVersion}"
+    testCompileOnly "javax.annotation:javax.annotation-api:1.3.2"
 
     testCompileOnly "org.projectlombok:lombok:$lombokVersion"
     testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
