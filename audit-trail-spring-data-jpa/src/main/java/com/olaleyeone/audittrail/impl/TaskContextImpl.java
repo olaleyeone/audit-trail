@@ -1,8 +1,7 @@
 package com.olaleyeone.audittrail.impl;
 
-import com.olaleyeone.audittrail.advice.CodeLocationUtil;
+import com.olaleyeone.audittrail.context.Action;
 import com.olaleyeone.audittrail.context.TaskContext;
-import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.CodeInstruction;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
@@ -11,13 +10,11 @@ import lombok.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Data
 @RequiredArgsConstructor
@@ -49,6 +46,29 @@ public class TaskContextImpl implements TaskContext {
         this.taskTransactionContextFactory = taskTransactionContextFactory;
     }
 
+    @SneakyThrows
+    @Override
+    public <E> E execute(String name, Action<E> action) {
+        TaskActivity taskActivity = createTaskActivity(name, null);
+        return ActivityRunner.startActivity(this, taskActivity, action);
+    }
+
+    @SneakyThrows
+    @Override
+    public <E> E execute(String name, String description, Action<E> action) {
+        TaskActivity taskActivity = createTaskActivity(name, description);
+        return ActivityRunner.startActivity(this, taskActivity, action);
+    }
+
+    @Override
+    public void setDescription(String description) {
+        if (taskActivity != null) {
+            taskActivity.setDescription(description);
+        } else {
+            task.setDescription(description);
+        }
+    }
+
     public Task getTask() {
         return task;
     }
@@ -57,48 +77,17 @@ public class TaskContextImpl implements TaskContext {
         return Optional.ofNullable(taskActivity);
     }
 
-    @Override
-    public void setDescription(String description) {
-        taskActivity.setDescription(description);
-    }
-
-    @Override
-    public <E> E execute(String name, Supplier<E> action) {
-        TaskActivity taskActivity = createTaskActivity(name, null);
-        return startActivity(taskActivity, action);
-    }
-
-    @Override
-    public <E> E execute(String name, String description, Supplier<E> action) {
-        TaskActivity taskActivity = createTaskActivity(name, description);
-        return startActivity(taskActivity, action);
-    }
-
-    protected <E> E startActivity(TaskActivity taskActivity, Supplier<E> action) {
-
-        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
-        taskContext.start(this);
-        LocalDateTime now = LocalDateTime.now();
-
-        E result;
-        try {
-            result = action.get();
-            taskActivity.setStatus(TaskActivity.Status.SUCCESSFUL);
-            return result;
-        } catch (Exception e) {
-            CodeLocationUtil.setFailurePoint(taskActivity, e);
-            throw e;
-        } finally {
-            taskActivity.setDuration(Duration.builder()
-                    .startedOn(now)
-                    .nanoSeconds(now.until(LocalDateTime.now(), ChronoUnit.NANOS))
-                    .build());
-            taskContext.end();
-        }
-    }
-
     public List<TaskActivity> getTaskActivities() {
-        return Collections.unmodifiableList(taskActivities);
+        return getActivityStream().collect(Collectors.toList());
+    }
+
+    public Stream<TaskActivity> getActivityStream() {
+        Stream<TaskActivity> children = this.children.parallelStream()
+                .flatMap(it -> it.getActivityStream());
+        if (taskActivity == null) {
+            return children;
+        }
+        return Stream.concat(Stream.of(taskActivity), children);
     }
 
     public void registerFailedTransaction(TaskTransactionContext taskTransactionContext) {
@@ -114,15 +103,15 @@ public class TaskContextImpl implements TaskContext {
         taskTransactionContextFactory.joinAvailableTransaction(taskActivity);
     }
 
+    public void end() {
+        taskContextHolder.registerContext(parent.orElse(null));
+    }
+
     private void addChild(TaskContextImpl taskContext) {
         children.add(taskContext);
         TaskActivity taskActivity = taskContext.getTaskActivity().orElseThrow(NoTaskActivityException::new);
         taskActivity.setPrecedence(taskActivities.size() + 1);
         taskActivities.add(taskActivity);
-    }
-
-    public void end() {
-        taskContextHolder.registerContext(parent.orElse(null));
     }
 
     private TaskActivity createTaskActivity(String name, String description) {

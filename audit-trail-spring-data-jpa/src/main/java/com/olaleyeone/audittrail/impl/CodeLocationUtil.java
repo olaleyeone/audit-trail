@@ -1,4 +1,4 @@
-package com.olaleyeone.audittrail.advice;
+package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.api.Activity;
 import com.olaleyeone.audittrail.entity.CodeInstruction;

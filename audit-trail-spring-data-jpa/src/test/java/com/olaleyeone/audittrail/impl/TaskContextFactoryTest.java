@@ -53,6 +53,15 @@ class TaskContextFactoryTest extends ComponentTest {
     void testSetDescription() {
         String description = faker.lordOfTheRings().location();
         Task task = new Task();
+        TaskContextImpl context = taskContextFactory.start(task);
+        context.setDescription(description);
+        assertEquals(description, task.getDescription());
+    }
+
+    @Test
+    void testSetDescriptionInChildContext() {
+        String description = faker.lordOfTheRings().location();
+        Task task = new Task();
         TaskContextImpl context1 = taskContextFactory.start(task);
         TaskActivity child = context1.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             TaskContextImpl context2 = taskContextHolder.getObject();

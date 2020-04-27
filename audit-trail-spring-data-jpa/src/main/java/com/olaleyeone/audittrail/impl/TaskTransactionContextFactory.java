@@ -63,7 +63,7 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
                 .map(it -> (TaskTransactionContext) it);
     }
 
-    public TaskTransactionContext createTaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
+    protected TaskTransactionContext createTaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
         return new TaskTransactionContext(taskContextHolder.getObject(), taskTransactionLogger);
     }
 

@@ -5,6 +5,7 @@ import com.olaleyeone.audittrail.api.Activity;
 import com.olaleyeone.audittrail.entity.CodeInstruction;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
+import com.olaleyeone.audittrail.impl.CodeLocationUtil;
 import com.olaleyeone.audittrail.impl.TaskContextHolder;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import com.olaleyeone.audittrail.impl.TaskTransactionContextFactory;
@@ -38,7 +39,7 @@ class ActivityAdviceTest extends ComponentTest {
     @BeforeEach
     public void setUp() throws NoSuchMethodException {
         taskContextHolder = new TaskContextHolder();
-        activityAdvice = new ActivityAdvice(taskContextHolder, Mockito.mock(TaskTransactionContextFactory.class));
+        activityAdvice = new ActivityAdvice(taskContextHolder);
 
         proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         Object[] args = new Object[]{new Object()};
@@ -58,7 +59,7 @@ class ActivityAdviceTest extends ComponentTest {
     void activityMethodInvoked() throws Throwable {
 
         TaskContextImpl taskContext = new TaskContextImpl(task, null, taskContextHolder, taskTransactionContextFactory);
-        taskContextHolder.registerContext(taskContext);
+        taskContext.start(null);
 
         activityAdvice.adviceActivityMethod(proceedingJoinPoint);
 
@@ -77,7 +78,7 @@ class ActivityAdviceTest extends ComponentTest {
     void activityMethodThrowsError() throws Throwable {
 
         TaskContextImpl taskContext = new TaskContextImpl(task, null, taskContextHolder, taskTransactionContextFactory);
-        taskContextHolder.registerContext(taskContext);
+        taskContext.start(null);
 
         Mockito.doAnswer(invocation -> {
             new Target().activity();

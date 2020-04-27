@@ -101,30 +101,14 @@ class TaskTransactionContextFactoryTest extends EntityTest {
     }
 
     @Test
-    void testCreateTaskTransactionContext2() {
-
-        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
-        taskContext.start(null);
-
-        TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.createTaskTransactionContext(null);
-        TaskContextImpl currentTaskContext = taskContextHolder.getObject();
-        assertSame(taskContext, currentTaskContext);
-
-        currentTaskContext.execute(faker.lordOfTheRings().location(), () -> null);
-
-        assertEquals(1, taskContext.getTaskActivities().size());
-        assertEquals(0, taskTransactionContext.getTaskActivities().size());
-    }
-
-    @Test
-    public void joinAvailableTransaction(){
+    public void joinAvailableTransaction() {
         TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
         taskContext.start(null);
         transactionTemplate.execute(status -> {
             TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.getObject();
             taskContext.execute(faker.lordOfTheRings().location(), () -> null);
 
-            assertEquals(1, taskContext.getTaskActivities().size());
+            assertEquals(2, taskContext.getTaskActivities().size());
             assertEquals(1, taskTransactionContext.getTaskActivities().size());
             return null;
         });
