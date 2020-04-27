@@ -10,7 +10,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public abstract class CodeContextUtil {
+public class CodeContextUtil {
+
+    private CodeContextUtil() {
+    }
 
     private static final ThreadLocal<Map<Throwable, CodeContext>> errorThreadLocal = new ThreadLocal<>();
 
