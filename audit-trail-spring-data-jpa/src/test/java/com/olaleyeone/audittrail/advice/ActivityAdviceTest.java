@@ -143,7 +143,7 @@ class ActivityAdviceTest extends ComponentTest {
         @Activity("Test")
         public void activity() {
             try {
-                Delegate.error();
+                new Delegate().error();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -152,7 +152,7 @@ class ActivityAdviceTest extends ComponentTest {
 
     private static class Delegate {
 
-        static void error() throws Exception {
+        void error() throws Exception {
             throw new Exception();
         }
     }

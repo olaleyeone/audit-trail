@@ -66,9 +66,9 @@ public class TaskContextImpl implements TaskContext {
     public void setDescription(String description) {
         if (taskActivity != null) {
             taskActivity.setDescription(description);
-        } else {
-            task.setDescription(description);
+            return;
         }
+        task.setDescription(description);
     }
 
     public Task getTask() {

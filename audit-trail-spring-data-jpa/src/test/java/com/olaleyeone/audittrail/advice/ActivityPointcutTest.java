@@ -89,7 +89,7 @@ class ActivityPointcutTest {
 
         @Activity("Test")
         void activity(int arg0, String arg1) {
-
+            //intentional
         }
     }
 }

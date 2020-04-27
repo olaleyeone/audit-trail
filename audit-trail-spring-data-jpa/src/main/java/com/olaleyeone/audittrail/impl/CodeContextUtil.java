@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class CodeContextUtil {
+public abstract class CodeContextUtil {
 
     private static final ThreadLocal<Map<Throwable, CodeContext>> errorThreadLocal = new ThreadLocal<>();
 
@@ -56,7 +56,8 @@ public class CodeContextUtil {
             if (codeContext != null) {
                 return codeContext;
             }
-        } else {
+        }
+        if (errorInstructionMap == null) {
             errorInstructionMap = new HashMap<>();
             errorThreadLocal.set(errorInstructionMap);
         }
