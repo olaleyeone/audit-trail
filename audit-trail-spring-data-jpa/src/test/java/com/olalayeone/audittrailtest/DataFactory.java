@@ -54,7 +54,7 @@ public class DataFactory {
 
         taskTransaction.setDuration(Duration.builder()
                 .startedOn(LocalDateTime.now())
-                .nanoSeconds(faker.number().randomNumber())
+                .nanoSecondsTaken(faker.number().randomNumber())
                 .build());
 
         taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);

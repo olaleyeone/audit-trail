@@ -5,10 +5,13 @@ import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.repository.TaskActivityRepository;
 import com.olaleyeone.audittrail.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +19,8 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class TaskContextSaver {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final TaskActivityRepository taskActivityRepository;
     private final TaskRepository taskRepository;
@@ -26,7 +31,13 @@ public class TaskContextSaver {
     @Transactional
     public void save(TaskContextImpl taskContext) {
         saveTask(taskContext.getTask());
-        saveActivities(taskContext);
+        List<Long> generatedIds = taskContext.getActivityStream()
+                .map(TaskActivity::getId)
+                .filter(it -> it != null)
+                .collect(Collectors.toList());
+
+        saveActivities(taskContext, generatedIds);
+        saveFailedTransactions(taskContext, generatedIds);
     }
 
     protected void saveTask(Task task) {
@@ -43,17 +54,25 @@ public class TaskContextSaver {
         }
     }
 
-    protected void saveActivities(TaskContextImpl taskContext) {
-        List<Long> generatedIds = taskContext.getActivityStream()
-                .map(TaskActivity::getId)
-                .collect(Collectors.toList());
-        Map<Long, TaskActivity> savedActivities = taskActivityRepository.findAllById(generatedIds)
+    protected void saveActivities(TaskContextImpl taskContext, List<Long> generatedIds) {
+        Map<Long, TaskActivity> savedActivities = generatedIds.isEmpty() ? Collections.EMPTY_MAP : taskActivityRepository.findAllById(generatedIds)
                 .parallelStream()
                 .collect(Collectors.toMap(TaskActivity::getId, it -> it));
 
         taskContext.getTaskActivity().ifPresent(taskActivity -> saveTaskActivity(taskActivity, savedActivities));
 
         taskContext.getChildren().forEach(childContext -> saveChildContext(childContext, savedActivities));
+    }
+
+    protected void saveFailedTransactions(TaskContextImpl taskContext, List<Long> generatedIds) {
+        taskContext.getAllFailedTransactionStream().sequential().forEach(taskTransactionContext -> {
+            List<Long> activityIds = taskTransactionContext.getTaskActivities().stream().map(TaskActivity::getId)
+                    .collect(Collectors.toList());
+            if (!Collections.disjoint(generatedIds, activityIds)) {
+                return;
+            }
+            taskTransactionContext.saveAfterFailure();
+        });
     }
 
     private void saveChildContext(TaskContextImpl activityContext, Map<Long, TaskActivity> savedActivities) {
@@ -73,7 +92,7 @@ public class TaskContextSaver {
             if (savedCopy == null) {
                 taskActivity.setId(null);
                 entityManager.persist(taskActivity);
-            } else if (savedCopy.getDuration().getNanoSeconds() == null) {
+            } else if (savedCopy.getDuration().getNanoSecondsTaken() == null) {
                 entityManager.merge(taskActivity);
             }
         }

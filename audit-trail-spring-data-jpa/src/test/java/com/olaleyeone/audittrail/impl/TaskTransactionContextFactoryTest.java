@@ -32,12 +32,16 @@ class TaskTransactionContextFactoryTest extends EntityTest {
     private TaskContextHolder taskContextHolder;
     private TaskTransactionContextFactory taskTransactionContextFactory;
     private TaskActivity taskActivity;
+    private TaskTransactionLogger taskTransactionLogger;
 
     @BeforeEach
     public void setUp() {
         taskContextHolder = new TaskContextHolder();
-        taskTransactionContextFactory = Mockito.spy(new TaskTransactionContextFactory(taskContextHolder));
+        TaskTransactionContextFactory taskTransactionContextFactory = new TaskTransactionContextFactory(taskContextHolder);
         applicationContext.getAutowireCapableBeanFactory().autowireBean(taskTransactionContextFactory);
+        taskTransactionContextFactory.init();
+        taskTransactionLogger = taskTransactionContextFactory.getTaskTransactionLogger();
+        this.taskTransactionContextFactory = Mockito.spy(taskTransactionContextFactory);
 
         taskActivity = new TaskActivity();
         taskActivity.setTask(new Task());
@@ -87,14 +91,14 @@ class TaskTransactionContextFactoryTest extends EntityTest {
     void shouldRequireTaskActivity() {
         taskContextHolder.registerContext(taskContext);
         Mockito.doReturn(Optional.empty()).when(taskContext).getTaskActivity();
-        assertThrows(NoTaskActivityException.class, () -> taskTransactionContextFactory.createTaskTransactionContext(null));
+        assertThrows(NoTaskActivityException.class, () -> taskTransactionContextFactory.createTaskTransactionContext(taskTransactionLogger));
     }
 
     @Test
     void testCreateTaskTransactionContext() {
         taskContextHolder.registerContext(taskContext);
 
-        TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.createTaskTransactionContext(null);
+        TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.createTaskTransactionContext(taskTransactionLogger);
 
         assertSame(taskContext.getTaskActivity().get(), taskTransactionContext.getTaskActivity());
         assertSame(taskContext.getTask(), taskTransactionContext.getTask());

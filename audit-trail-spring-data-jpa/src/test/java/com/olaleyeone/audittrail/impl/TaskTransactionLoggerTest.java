@@ -4,6 +4,7 @@ import com.olalayeone.audittrailtest.DataFactory;
 import com.olalayeone.audittrailtest.EntityTest;
 import com.olaleyeone.audittrail.advice.EntityManagerAdvice;
 import com.olaleyeone.audittrail.api.*;
+import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.*;
 import com.olaleyeone.audittrail.repository.EntityStateAttributeRepository;
 import com.olaleyeone.audittrail.repository.EntityStateRepository;
@@ -49,6 +50,8 @@ class TaskTransactionLoggerTest extends EntityTest {
 
     private TaskTransactionContext taskTransactionContext;
 
+    private TaskTransaction taskTransaction;
+
     @BeforeEach
     void setUp() {
         taskTransactionLogger = new TaskTransactionLogger(entityManager);
@@ -58,13 +61,20 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(entityOperations).when(entityStateLogger).getOperations();
 
         taskTransactionContext = Mockito.mock(TaskTransactionContext.class);
-        Mockito.doReturn(LocalDateTime.now()).when(taskTransactionContext).getStartTime();
         Mockito.doReturn(Collections.EMPTY_LIST).when(taskTransactionContext).getTaskActivities();
         Mockito.doReturn(entityStateLogger).when(taskTransactionContext).getEntityStateLogger();
 
         TaskActivity taskActivity = dataFactory.getTaskActivity(true);
         Mockito.doReturn(taskActivity).when(taskTransactionContext).getTaskActivity();
         Mockito.doReturn(taskActivity.getTask()).when(taskTransactionContext).getTask();
+
+        taskTransaction = new TaskTransaction();
+        taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
+        taskTransaction.setDuration(Duration.builder()
+                .startedOn(LocalDateTime.now())
+                .build());
+        taskTransaction.setTask(taskActivity.getTask());
+        taskTransaction.setTaskActivity(taskActivity);
     }
 
     @AfterEach
@@ -75,16 +85,13 @@ class TaskTransactionLoggerTest extends EntityTest {
     @Test
     void saveUnitOfWork() {
 
-        taskTransactionLogger.saveTaskTransaction(taskTransactionContext, TaskTransaction.Status.COMMITTED);
+        Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
+        taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
 
         assertEquals(1, taskTransactionRepository.count());
         assertEquals(3, entityStateRepository.count());
         assertEquals(3, entityStateAttributeRepository.count());
 
-        List<TaskTransaction> units = taskTransactionRepository.getAllByTask(taskTransactionContext.getTask());
-
-        assertEquals(1, units.size());
-        TaskTransaction taskTransaction = units.iterator().next();
         taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
             EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
             Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
@@ -99,15 +106,16 @@ class TaskTransactionLoggerTest extends EntityTest {
     @Test
     void shouldSaveActivityLogs() {
 
+        Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
+
         List<TaskActivity> taskActivities = Arrays.asList(dataFactory.getTaskActivity(false), dataFactory.getTaskActivity(false));
         Mockito.doReturn(taskActivities).when(taskTransactionContext).getTaskActivities();
 
-        TaskTransaction taskTransaction = taskTransactionLogger.saveTaskTransaction(taskTransactionContext, TaskTransaction.Status.COMMITTED);
+        TaskTransaction taskTransaction = taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
         assertEquals(TaskTransaction.Status.COMMITTED, taskTransaction.getStatus());
         taskActivities
                 .forEach(taskActivity -> {
                     assertNotNull(taskActivity.getId());
-                    assertEquals(taskTransaction, taskActivity.getTaskTransaction());
                 });
     }
 

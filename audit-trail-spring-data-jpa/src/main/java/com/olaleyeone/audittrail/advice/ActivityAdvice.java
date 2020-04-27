@@ -1,10 +1,10 @@
 package com.olaleyeone.audittrail.advice;
 
 import com.olaleyeone.audittrail.api.Activity;
-import com.olaleyeone.audittrail.entity.CodeInstruction;
+import com.olaleyeone.audittrail.entity.CodeContext;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.impl.ActivityRunner;
-import com.olaleyeone.audittrail.impl.CodeLocationUtil;
+import com.olaleyeone.audittrail.impl.CodeContextUtil;
 import com.olaleyeone.audittrail.impl.TaskContextHolder;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import lombok.RequiredArgsConstructor;
@@ -29,14 +29,14 @@ public class ActivityAdvice implements ActivityPointCut {
 
         MethodSignature methodSignature = (MethodSignature) jp.getSignature();
 
-        CodeInstruction entryPoint = CodeLocationUtil.getEntryPoint(methodSignature);
-        Activity activity = CodeLocationUtil.getActivityAnnotation(methodSignature);
+        CodeContext entryPoint = CodeContextUtil.getEntryPoint(methodSignature);
+        Activity activity = CodeContextUtil.getActivityAnnotation(methodSignature);
 
         TaskActivity taskActivity = createTaskActivity(parentContext, entryPoint, activity);
         return ActivityRunner.startActivity(parentContext, taskActivity, () -> jp.proceed(jp.getArgs()));
     }
 
-    private TaskActivity createTaskActivity(TaskContextImpl parentContext, CodeInstruction entryPoint, Activity activity) {
+    private TaskActivity createTaskActivity(TaskContextImpl parentContext, CodeContext entryPoint, Activity activity) {
         TaskActivity taskActivity = new TaskActivity();
         taskActivity.setTask(parentContext.getTask());
         taskActivity.setParentActivity(parentContext.getTaskActivity().orElse(null));

@@ -17,5 +17,5 @@ public class Duration {
     private LocalDateTime startedOn;
 
     @Column
-    private Long nanoSeconds;
+    private Long nanoSecondsTaken;
 }

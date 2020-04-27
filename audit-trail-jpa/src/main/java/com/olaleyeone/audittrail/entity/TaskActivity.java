@@ -25,13 +25,14 @@ public class TaskActivity {
     @Column(nullable = false)
     private String name;
 
+    @Lob
     private String description;
 
     @Column(nullable = false)
     private Integer precedence;
 
     @OneToOne(cascade = CascadeType.PERSIST)
-    private CodeInstruction entryPoint;
+    private CodeContext entryPoint;
 
     @Embedded
     private Duration duration;
@@ -40,10 +41,13 @@ public class TaskActivity {
     @Column(nullable = false)
     private TaskActivity.Status status;
 
+    @Lob
     private String failureType;
+    @Lob
     private String failureReason;
+
     @ManyToOne(cascade = CascadeType.PERSIST)
-    private CodeInstruction failurePoint;
+    private CodeContext failurePoint;
 
     public static enum Status {
         SUCCESSFUL, FAILED, IN_PROGRESS

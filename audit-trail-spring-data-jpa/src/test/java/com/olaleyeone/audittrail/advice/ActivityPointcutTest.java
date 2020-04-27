@@ -1,8 +1,8 @@
 package com.olaleyeone.audittrail.advice;
 
 import com.olaleyeone.audittrail.api.Activity;
-import com.olaleyeone.audittrail.entity.CodeInstruction;
-import com.olaleyeone.audittrail.impl.CodeLocationUtil;
+import com.olaleyeone.audittrail.entity.CodeContext;
+import com.olaleyeone.audittrail.impl.CodeContextUtil;
 import lombok.NoArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -37,16 +37,17 @@ class ActivityPointcutTest {
 
     @Test
     void persist() {
-        target.activity();
+        target.activity(1, "a");
         Mockito.verify(advice, Mockito.times(1)).adviceActivity(Mockito.argThat(argument -> {
             MethodSignature methodSignature = (MethodSignature) argument.getSignature();
 
-            CodeInstruction entryPoint = CodeLocationUtil.getEntryPoint(methodSignature);
+            CodeContext entryPoint = CodeContextUtil.getEntryPoint(methodSignature);
             assertNotNull(entryPoint);
             assertEquals(Target.class.getName(), entryPoint.getClassName());
             assertEquals("activity", entryPoint.getMethodName());
+            assertEquals("(int, java.lang.String)", entryPoint.getMethodSignature());
 
-            Activity activity = CodeLocationUtil.getActivityAnnotation(methodSignature);
+            Activity activity = CodeContextUtil.getActivityAnnotation(methodSignature);
             assertNotNull(activity);
             assertEquals("Test", activity.value());
             return true;
@@ -87,7 +88,7 @@ class ActivityPointcutTest {
     private static class Target {
 
         @Activity("Test")
-        void activity() {
+        void activity(int arg0, String arg1) {
 
         }
     }

@@ -67,10 +67,10 @@ class TaskContextSaverTest extends EntityTest {
         Task task = dataFactory.getTask(true);
         entityManager.detach(task);
         long nanoSeconds = faker.number().randomNumber();
-        task.getDuration().setNanoSeconds(nanoSeconds);
+        task.getDuration().setNanoSecondsTaken(nanoSeconds);
 
         Task dbValue = entityManager.find(Task.class, task.getId());
-        assertNull(dbValue.getDuration().getNanoSeconds());
+        assertNull(dbValue.getDuration().getNanoSecondsTaken());
 
         taskContextSaver.saveTask(task);
         entityManager.flush();
@@ -103,14 +103,14 @@ class TaskContextSaverTest extends EntityTest {
         TaskActivity dvValue = entityManager.find(TaskActivity.class, taskActivity.getId());
 
         long nanoSeconds = faker.number().randomNumber();
-        taskActivity.getDuration().setNanoSeconds(nanoSeconds);
-        assertNull(dvValue.getDuration().getNanoSeconds());
+        taskActivity.getDuration().setNanoSecondsTaken(nanoSeconds);
+        assertNull(dvValue.getDuration().getNanoSecondsTaken());
 
         taskContextSaver.saveTaskActivity(taskActivity, Collections.singletonMap(taskActivity.getId(),
                 dvValue));
         entityManager.flush();
         entityManager.refresh(dvValue);
-        assertEquals(nanoSeconds, dvValue.getDuration().getNanoSeconds());
+        assertEquals(nanoSeconds, dvValue.getDuration().getNanoSecondsTaken());
     }
 
     @Transactional
@@ -121,15 +121,15 @@ class TaskContextSaverTest extends EntityTest {
         TaskActivity dvValue = entityManager.find(TaskActivity.class, taskActivity.getId());
 
         long nanoSeconds = faker.number().randomNumber();
-        taskActivity.getDuration().setNanoSeconds(nanoSeconds);
+        taskActivity.getDuration().setNanoSecondsTaken(nanoSeconds);
 
-        dvValue.getDuration().setNanoSeconds(nanoSeconds + 1);
+        dvValue.getDuration().setNanoSecondsTaken(nanoSeconds + 1);
 
         taskContextSaver.saveTaskActivity(taskActivity, Collections.singletonMap(taskActivity.getId(),
                 dvValue));
         entityManager.flush();
         entityManager.refresh(dvValue);
-        assertEquals(nanoSeconds + 1, dvValue.getDuration().getNanoSeconds());
+        assertEquals(nanoSeconds + 1, dvValue.getDuration().getNanoSecondsTaken());
     }
 
     @Test
@@ -146,7 +146,7 @@ class TaskContextSaverTest extends EntityTest {
         });
 
         transactionTemplate.execute(status -> {
-            taskContextSaver.saveActivities(taskContext);
+            taskContextSaver.save(taskContext);
             assertNotNull(taskActivity.getId());
             assertEquals(2, taskActivities.size());
             taskActivities.forEach(it -> assertNotNull(it.getId()));
@@ -171,5 +171,28 @@ class TaskContextSaverTest extends EntityTest {
 
         taskContextSaver.save(rootContext);
         assertNotNull(task.getId());
+    }
+
+    @Test
+    void saveWithFailedTransaction() {
+        TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
+        taskContext.start(null);
+
+        TaskActivity taskActivity1 = transactionTemplate.execute(status -> {
+            status.setRollbackOnly();
+            TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.getObject();
+            EntityIdentifier entityIdentifier = new EntityIdentifier(String.class, String.class.getSimpleName(), 1);
+            taskTransactionContext.getEntityStateLogger().registerDeletedEntity(entityIdentifier);
+            return taskContext.execute("1", () -> taskContextHolder.getObject().getTaskActivity().get());
+        });
+        transactionTemplate.execute(status -> {
+            taskContextSaver.save(taskContext);
+            assertNotNull(taskActivity.getId());
+            assertNotNull(taskActivity1.getId());
+            assertNotNull(taskActivity1.getTaskTransaction());
+            status.setRollbackOnly();
+            return null;
+        });
     }
 }

@@ -27,12 +27,12 @@ public class ActivityRunner {
             taskActivity.setStatus(TaskActivity.Status.SUCCESSFUL);
             return result;
         } catch (Exception e) {
-            CodeLocationUtil.setFailurePoint(taskActivity, e);
+            CodeContextUtil.setFailurePoint(taskActivity, e);
             throw e;
         } finally {
             taskActivity.setDuration(Duration.builder()
                     .startedOn(now)
-                    .nanoSeconds(now.until(LocalDateTime.now(), ChronoUnit.NANOS))
+                    .nanoSecondsTaken(now.until(LocalDateTime.now(), ChronoUnit.NANOS))
                     .build());
             taskContext.end();
         }

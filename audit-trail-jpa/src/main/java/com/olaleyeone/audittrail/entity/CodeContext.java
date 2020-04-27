@@ -6,16 +6,21 @@ import javax.persistence.*;
 
 @Data
 @Entity
-public class CodeInstruction {
+public class CodeContext {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Lob
     @Column(nullable = false)
     private String className;
+
+    @Lob
     @Column(nullable = false)
     private String methodName;
-    private String signature;
+
+    @Lob
+    private String methodSignature;
     private Integer lineNumber;
 }

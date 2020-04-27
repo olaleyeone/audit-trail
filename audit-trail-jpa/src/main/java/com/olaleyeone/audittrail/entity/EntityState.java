@@ -16,6 +16,7 @@ public class EntityState {
     @ManyToOne(optional = false)
     private TaskTransaction taskTransaction;
 
+    @Lob
     @Column(nullable = false)
     private String entityName;
     @Column(nullable = false)

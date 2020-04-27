@@ -1,6 +1,7 @@
 package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.entity.TaskActivity;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -13,13 +14,14 @@ import java.util.Optional;
 
 public class TaskTransactionContextFactory implements FactoryBean<TaskTransactionContext> {
 
-    final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PersistenceContext
     private EntityManager entityManager;
 
     private final TaskContextHolder taskContextHolder;
 
+    @Getter
     private TaskTransactionLogger taskTransactionLogger;
 
     public TaskTransactionContextFactory(TaskContextHolder taskContextHolder) {

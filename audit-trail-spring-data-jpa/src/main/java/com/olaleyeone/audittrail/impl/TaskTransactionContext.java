@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,15 +22,14 @@ public class TaskTransactionContext implements TransactionSynchronization {
 
     @Getter(AccessLevel.NONE)
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private final LocalDateTime startTime = LocalDateTime.now();
+
+    private final TaskTransaction taskTransaction;
     private final List<TaskActivity> taskActivities = new ArrayList<>();
 
     private final TaskContextImpl taskContext;
     private final TaskActivity taskActivity;
     private final TaskTransactionLogger taskTransactionLogger;
     private final EntityStateLogger entityStateLogger;
-
-    private TaskTransaction.Status status;
 
     public TaskTransactionContext(TaskContextImpl taskContext, TaskTransactionLogger taskTransactionLogger) {
         this(taskContext, taskTransactionLogger, new EntityStateLoggerImpl());
@@ -40,9 +40,12 @@ public class TaskTransactionContext implements TransactionSynchronization {
         this.taskActivity = taskContext.getTaskActivity().orElseThrow(NoTaskActivityException::new);
         this.taskTransactionLogger = taskTransactionLogger;
         this.entityStateLogger = entityStateLogger;
+
+        this.taskTransaction = taskTransactionLogger.createTaskTransaction(this, LocalDateTime.now());
     }
 
     public void addActivity(TaskActivity taskActivity) {
+        taskActivity.setTaskTransaction(taskTransaction);
         this.taskActivities.add(taskActivity);
     }
 
@@ -57,21 +60,38 @@ public class TaskTransactionContext implements TransactionSynchronization {
             logger.warn("No work done in transaction");
             return;
         }
-        taskTransactionLogger.saveTaskTransaction(this, TaskTransaction.Status.COMMITTED);
+        this.taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
+        setTimeTaken();
+        taskTransactionLogger.saveTaskTransaction(this);
+    }
+
+    private void setTimeTaken() {
+        this.taskTransaction.getDuration().setNanoSecondsTaken(taskTransaction.getDuration().getStartedOn()
+                .until(LocalDateTime.now(), ChronoUnit.NANOS));
     }
 
     @Override
     public void afterCompletion(int status) {
         if (status == TransactionSynchronization.STATUS_COMMITTED) {
-            this.status = TaskTransaction.Status.COMMITTED;
+            this.taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
         } else {
-            this.status = status == TransactionSynchronization.STATUS_ROLLED_BACK
+            this.taskTransaction.setStatus(status == TransactionSynchronization.STATUS_ROLLED_BACK
                     ? TaskTransaction.Status.ROLLED_BACK
-                    : TaskTransaction.Status.UNKNOWN;
+                    : TaskTransaction.Status.UNKNOWN);
             if (!taskActivities.isEmpty()) {
                 taskContext.registerFailedTransaction(this);
             }
         }
+        if (taskTransaction.getDuration().getNanoSecondsTaken() == null) {
+            setTimeTaken();
+        }
+    }
+
+    public void saveAfterFailure() {
+        if (taskTransaction.getStatus() == TaskTransaction.Status.COMMITTED) {
+            throw new IllegalStateException();
+        }
+        taskTransactionLogger.saveTaskTransaction(this);
     }
 
     public Task getTask() {

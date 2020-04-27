@@ -8,6 +8,7 @@ import com.olaleyeone.audittrail.api.EntityIdentifier;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import com.olaleyeone.audittrail.impl.TaskTransactionContext;
+import com.olaleyeone.audittrail.impl.TaskTransactionLogger;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ class EntityManagerAdviceTest extends ComponentTest {
 
             @Override
             public TaskTransactionContext get() {
-                return new TaskTransactionContext(taskContext, null, entityStateLogger);
+                return new TaskTransactionContext(taskContext, new TaskTransactionLogger(null), entityStateLogger);
             }
         });
         entityIdentifier = new EntityIdentifier(Object.class, faker.funnyName().name(), faker.number().randomDigit());

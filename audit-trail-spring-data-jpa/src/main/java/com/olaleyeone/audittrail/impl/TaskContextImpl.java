@@ -2,7 +2,7 @@ package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.context.Action;
 import com.olaleyeone.audittrail.context.TaskContext;
-import com.olaleyeone.audittrail.entity.CodeInstruction;
+import com.olaleyeone.audittrail.entity.CodeContext;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.error.NoTaskActivityException;
@@ -34,6 +34,8 @@ public class TaskContextImpl implements TaskContext {
     private final List<TaskActivity> taskActivities = new ArrayList<>();
 
     private final List<TaskContextImpl> children = new ArrayList<>();
+
+    @Getter(AccessLevel.NONE)
     private final List<TaskTransactionContext> failedTaskTransactionContexts = new ArrayList<>();
 
     public TaskContextImpl(
@@ -90,6 +92,12 @@ public class TaskContextImpl implements TaskContext {
         return Stream.concat(Stream.of(taskActivity), children);
     }
 
+    public Stream<TaskTransactionContext> getAllFailedTransactionStream() {
+        Stream<TaskTransactionContext> children = this.children.parallelStream()
+                .flatMap(it -> it.getAllFailedTransactionStream());
+        return Stream.concat(failedTaskTransactionContexts.stream(), children);
+    }
+
     public void registerFailedTransaction(TaskTransactionContext taskTransactionContext) {
         failedTaskTransactionContexts.add(taskTransactionContext);
     }
@@ -122,8 +130,8 @@ public class TaskContextImpl implements TaskContext {
         taskActivity.setDescription(description);
         taskActivity.setStatus(TaskActivity.Status.IN_PROGRESS);
 
-        StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
-        CodeInstruction entryPoint = CodeLocationUtil.getEntryPoint(stackTraceElement);
+        StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[3];
+        CodeContext entryPoint = CodeContextUtil.getEntryPoint(stackTraceElement);
         taskActivity.setEntryPoint(entryPoint);
 
         return taskActivity;

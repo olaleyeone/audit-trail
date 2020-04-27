@@ -2,10 +2,10 @@ package com.olaleyeone.audittrail.advice;
 
 import com.ComponentTest;
 import com.olaleyeone.audittrail.api.Activity;
-import com.olaleyeone.audittrail.entity.CodeInstruction;
+import com.olaleyeone.audittrail.entity.CodeContext;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
-import com.olaleyeone.audittrail.impl.CodeLocationUtil;
+import com.olaleyeone.audittrail.impl.CodeContextUtil;
 import com.olaleyeone.audittrail.impl.TaskContextHolder;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import com.olaleyeone.audittrail.impl.TaskTransactionContextFactory;
@@ -49,6 +49,7 @@ class ActivityAdviceTest extends ComponentTest {
 
         MethodSignature methodSignature = Mockito.mock(MethodSignature.class);
         Mockito.doReturn(method).when(methodSignature).getMethod();
+        Mockito.doReturn(method.getParameterTypes()).when(methodSignature).getParameterTypes();
 
         Mockito.doReturn(methodSignature).when(proceedingJoinPoint).getSignature();
 
@@ -71,7 +72,7 @@ class ActivityAdviceTest extends ComponentTest {
         assertEquals(1, taskActivity.getPrecedence());
         assertEquals(TaskActivity.Status.SUCCESSFUL, taskActivity.getStatus());
 
-        assertEquals(taskActivity.getEntryPoint(), CodeLocationUtil.getEntryPoint((MethodSignature) proceedingJoinPoint.getSignature()));
+        assertEquals(taskActivity.getEntryPoint(), CodeContextUtil.getEntryPoint((MethodSignature) proceedingJoinPoint.getSignature()));
     }
 
     @Test
@@ -98,8 +99,8 @@ class ActivityAdviceTest extends ComponentTest {
             assertEquals(1, taskActivity.getPrecedence());
             assertEquals(TaskActivity.Status.FAILED, taskActivity.getStatus());
 
-            assertEquals(taskActivity.getEntryPoint(), CodeLocationUtil.getEntryPoint((MethodSignature) proceedingJoinPoint.getSignature()));
-            CodeInstruction failurePoint = taskActivity.getFailurePoint();
+            assertEquals(taskActivity.getEntryPoint(), CodeContextUtil.getEntryPoint((MethodSignature) proceedingJoinPoint.getSignature()));
+            CodeContext failurePoint = taskActivity.getFailurePoint();
             assertNotNull(failurePoint);
             assertEquals(Delegate.class.getName(), failurePoint.getClassName());
             assertEquals("error", failurePoint.getMethodName());

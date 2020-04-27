@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -23,22 +22,23 @@ public class TaskTransactionLogger {
 
     private final EntityManager entityManager;
 
-    public TaskTransaction saveTaskTransaction(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
-        TaskTransaction taskTransaction = createTaskTransaction(taskTransactionContext, status);
+    public TaskTransaction saveTaskTransaction(TaskTransactionContext taskTransactionContext) {
+
+        TaskTransaction taskTransaction = taskTransactionContext.getTaskTransaction();
+        entityManager.persist(taskTransaction);
 
         taskTransactionContext.getEntityStateLogger().getOperations()
                 .forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
 
         taskTransactionContext.getTaskActivities().forEach(activityInTransaction -> {
-            activityInTransaction.setTaskTransaction(taskTransaction);
             entityManager.persist(activityInTransaction);
         });
         return taskTransaction;
     }
 
-    TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, TaskTransaction.Status status) {
+    TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, LocalDateTime startTime) {
         TaskTransaction taskTransaction = new TaskTransaction();
-        taskTransaction.setStatus(status);
+//        taskTransaction.setStatus(status);
 
         TaskActivity taskActivity = taskTransactionContext.getTaskActivity();
 
@@ -46,11 +46,10 @@ public class TaskTransactionLogger {
         taskTransaction.setTaskActivity(taskActivity);
 
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(taskTransactionContext.getStartTime())
-                .nanoSeconds(taskTransactionContext.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS))
+                .startedOn(startTime)
+//                .nanoSeconds(taskTransactionContext.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS))
                 .build());
 
-        entityManager.persist(taskTransaction);
         return taskTransaction;
     }
 

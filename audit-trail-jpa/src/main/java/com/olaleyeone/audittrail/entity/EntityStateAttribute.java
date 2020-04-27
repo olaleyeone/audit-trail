@@ -16,6 +16,7 @@ public class EntityStateAttribute {
     private EntityState entityState;
 
     private String name;
+    @Lob
     private String value;
 
     private boolean modified;

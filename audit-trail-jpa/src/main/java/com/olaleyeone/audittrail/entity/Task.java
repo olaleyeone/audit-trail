@@ -20,8 +20,11 @@ public class Task {
 
     @Column(nullable = false)
     private String name;
+
     @Column(nullable = false)
     private String type;
+
+    @Lob
     private String description;
 
     @Embedded
