@@ -22,40 +22,33 @@ public class DataFactory {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public Task getTask() {
+    public Task getTask(boolean persist) {
         Task task = new Task();
         task.setDuration(new Duration(LocalDateTime.now(), null));
         task.setName(faker.funnyName().name());
         task.setType(faker.app().name());
-        entityManager.persist(task);
+        if (persist) {
+            entityManager.persist(task);
+        }
         return task;
     }
 
-    public TaskActivity getTaskActivity() {
-        return getTaskActivity(true);
-    }
-
     public TaskActivity getTaskActivity(boolean persist) {
-        TaskActivity taskActivity = createTaskActivity();
+        TaskActivity taskActivity = new TaskActivity();
+        taskActivity.setTask(getTask(persist));
+        taskActivity.setName(faker.lordOfTheRings().character());
+        taskActivity.setPrecedence(1);
+        taskActivity.setDuration(new Duration(LocalDateTime.now(), null));
+        taskActivity.setStatus(TaskActivity.Status.IN_PROGRESS);
         if (persist) {
             entityManager.persist(taskActivity);
         }
         return taskActivity;
     }
 
-    private TaskActivity createTaskActivity() {
-        TaskActivity taskActivity = new TaskActivity();
-        taskActivity.setTask(getTask());
-        taskActivity.setName(faker.lordOfTheRings().character());
-        taskActivity.setPrecedence(1);
-        taskActivity.setDuration(new Duration(LocalDateTime.now(), null));
-        taskActivity.setStatus(TaskActivity.Status.IN_PROGRESS);
-        return taskActivity;
-    }
-
-    public TaskTransaction createTaskTransaction() {
+    public TaskTransaction createTaskTransaction(boolean persist) {
         TaskTransaction taskTransaction = new TaskTransaction();
-        TaskActivity taskActivity = getTaskActivity();
+        TaskActivity taskActivity = getTaskActivity(persist);
         taskTransaction.setTaskActivity(taskActivity);
         taskTransaction.setTask(taskActivity.getTask());
 
@@ -65,17 +58,21 @@ public class DataFactory {
                 .build());
 
         taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
-        entityManager.persist(taskTransaction);
+        if (persist) {
+            entityManager.persist(taskTransaction);
+        }
         return taskTransaction;
     }
 
-    public EntityState createEntityState() {
+    public EntityState createEntityState(boolean persist) {
         EntityState entityState = new EntityState();
-        entityState.setTaskTransaction(createTaskTransaction());
+        entityState.setTaskTransaction(createTaskTransaction(persist));
         entityState.setOperationType(OperationType.CREATE);
         entityState.setEntityName(faker.funnyName().name());
         entityState.setEntityId(faker.number().digit());
-        entityManager.persist(entityState);
+        if (persist) {
+            entityManager.persist(entityState);
+        }
         return entityState;
     }
 }

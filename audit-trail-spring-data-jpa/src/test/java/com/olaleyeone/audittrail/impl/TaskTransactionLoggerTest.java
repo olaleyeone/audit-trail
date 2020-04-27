@@ -62,7 +62,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(Collections.EMPTY_LIST).when(taskTransactionContext).getTaskActivities();
         Mockito.doReturn(entityStateLogger).when(taskTransactionContext).getEntityStateLogger();
 
-        TaskActivity taskActivity = dataFactory.getTaskActivity();
+        TaskActivity taskActivity = dataFactory.getTaskActivity(true);
         Mockito.doReturn(taskActivity).when(taskTransactionContext).getTaskActivity();
         Mockito.doReturn(taskActivity.getTask()).when(taskTransactionContext).getTask();
     }
@@ -113,7 +113,7 @@ class TaskTransactionLoggerTest extends EntityTest {
 
     @Test
     void saveEntityHistory() {
-        TaskTransaction taskTransaction = dataFactory.createTaskTransaction();
+        TaskTransaction taskTransaction = dataFactory.createTaskTransaction(true);
         OperationType operationType = OperationType.CREATE;
         EntityType<?> entityType = entityManager.getEntityManagerFactory().getMetamodel().entity(Task.class);
         EntityIdentifier entityIdentifier = new EntityIdentifierImpl(entityType, faker.number().randomDigit());
@@ -130,7 +130,7 @@ class TaskTransactionLoggerTest extends EntityTest {
 
     @Test
     void saveEntityHistoryAttribute() {
-        EntityState entityState = dataFactory.createEntityState();
+        EntityState entityState = dataFactory.createEntityState(true);
 
         EntityAttributeData data = EntityAttributeData.builder()
                 .value(new AuditDataImpl(faker.lordOfTheRings().character()))
