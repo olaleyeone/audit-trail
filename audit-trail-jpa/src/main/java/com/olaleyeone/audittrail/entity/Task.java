@@ -1,5 +1,7 @@
 package com.olaleyeone.audittrail.entity;
 
+import com.olaleyeone.audittrail.embeddable.Duration;
+import com.olaleyeone.audittrail.embeddable.WebRequest;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -18,15 +20,16 @@ public class Task {
 
     @Column(nullable = false)
     private String name;
+
     @Column(nullable = false)
     private String type;
+
+    @Lob
     private String description;
 
     @Embedded
     private WebRequest webRequest;
 
-    @Column(nullable = false)
-    private LocalDateTime startedOn;
-
-    private Long estimatedTimeTakenInNanos;
+    @Embedded
+    private Duration duration;
 }

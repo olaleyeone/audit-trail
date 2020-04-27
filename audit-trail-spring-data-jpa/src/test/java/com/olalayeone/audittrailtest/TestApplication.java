@@ -1,9 +1,7 @@
 package com.olalayeone.audittrailtest;
 
-import com.olaleyeone.audittrail.advice.AuditTrailAdvice;
-import com.olaleyeone.audittrail.impl.AuditTrailLogger;
-import com.olaleyeone.audittrail.impl.AuditTrailLoggerDelegate;
-import com.olaleyeone.audittrail.impl.AuditTrailLoggerFactory;
+import com.olaleyeone.audittrail.advice.EntityManagerAdvice;
+import com.olaleyeone.audittrail.impl.*;
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -16,18 +14,23 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class TestApplication {
 
     @Bean
-    public AuditTrailAdvice auditTrailAdvice() {
-        return Mockito.mock(AuditTrailAdvice.class);
+    public EntityManagerAdvice auditTrailAdvice() {
+        return Mockito.mock(EntityManagerAdvice.class);
     }
 
     @Bean
-    public AuditTrailLoggerFactory auditTrailLoggerFactory() {
-        return new AuditTrailLoggerFactory() {
+    public TaskTransactionContextFactory taskTransactionContextFactory() {
+        return new TaskTransactionContextFactory(new TaskContextHolder()) {
 
             @Override
-            public AuditTrailLogger createLogger(AuditTrailLoggerDelegate auditTrailLoggerDelegate) {
-                return Mockito.mock(AuditTrailLogger.class);
+            public TaskTransactionContext createTaskTransactionContext(TaskTransactionLogger taskTransactionLogger) {
+                return Mockito.mock(TaskTransactionContext.class);
             }
         };
+    }
+
+    @Bean
+    public TaskContextImpl taskContext() {
+        return Mockito.mock(TaskContextImpl.class);
     }
 }

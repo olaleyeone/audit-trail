@@ -5,6 +5,10 @@ import com.olaleyeone.audittrail.api.AuditData;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.api.EntityStateLogger;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
+import com.olaleyeone.audittrail.entity.TaskActivity;
+import com.olaleyeone.audittrail.impl.TaskContextImpl;
+import com.olaleyeone.audittrail.impl.TaskTransactionContext;
+import com.olaleyeone.audittrail.impl.TaskTransactionLogger;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,13 +18,12 @@ import org.mockito.Mockito;
 
 import javax.inject.Provider;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.inOrder;
 
-class AuditTrailAdviceTest extends ComponentTest {
-
-    private AuditTrailAdvice auditTrailAdvice;
+class EntityManagerAdviceTest extends ComponentTest {
 
     @Mock
     private EntityDataExtractor entityDataExtractor;
@@ -28,15 +31,21 @@ class AuditTrailAdviceTest extends ComponentTest {
     @Mock
     private EntityStateLogger entityStateLogger;
 
+    private EntityManagerAdvice entityManagerAdvice;
+
     private EntityIdentifier entityIdentifier;
+
+    @Mock
+    private TaskContextImpl taskContext;
 
     @BeforeEach
     public void setUp() {
-        auditTrailAdvice = new AuditTrailAdvice(entityDataExtractor, new Provider<EntityStateLogger>() {
+        Mockito.doReturn(Optional.of(new TaskActivity())).when(taskContext).getTaskActivity();
+        entityManagerAdvice = new EntityManagerAdvice(entityDataExtractor, new Provider<TaskTransactionContext>() {
 
             @Override
-            public EntityStateLogger get() {
-                return entityStateLogger;
+            public TaskTransactionContext get() {
+                return new TaskTransactionContext(taskContext, new TaskTransactionLogger(null), entityStateLogger);
             }
         });
         entityIdentifier = new EntityIdentifier(Object.class, faker.funnyName().name(), faker.number().randomDigit());
@@ -53,7 +62,7 @@ class AuditTrailAdviceTest extends ComponentTest {
         Map<String, AuditData> data = Mockito.mock(Map.class);
         Mockito.doReturn(data).when(entityDataExtractor).extractAttributes(Mockito.any());
 
-        auditTrailAdvice.adviceEntityCreation(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityCreation(proceedingJoinPoint);
 
         Mockito.verify(proceedingJoinPoint, Mockito.times(1))
                 .proceed(args);
@@ -80,7 +89,7 @@ class AuditTrailAdviceTest extends ComponentTest {
         Map<String, AuditData> data = Mockito.mock(Map.class);
         Mockito.doReturn(data).when(entityDataExtractor).extractAttributes(Mockito.any());
 
-        Object actualResult = auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        Object actualResult = entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
         assertSame(expectedResult, actualResult);
 
         Mockito.verify(proceedingJoinPoint, Mockito.times(1))
@@ -115,7 +124,7 @@ class AuditTrailAdviceTest extends ComponentTest {
 
         InOrder inOrder = inOrder(proceedingJoinPoint, entityDataExtractor, entityStateLogger);
 
-        auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
 
         inOrder.verify(entityStateLogger, Mockito.times(1))
                 .isNew(entityIdentifier);
@@ -142,7 +151,7 @@ class AuditTrailAdviceTest extends ComponentTest {
 
         Mockito.doReturn(true).when(entityStateLogger).isNew(Mockito.any());
 
-        auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
 
         Mockito.verify(entityStateLogger, Mockito.never())
                 .setPreviousState(Mockito.any(), Mockito.any());
@@ -159,7 +168,7 @@ class AuditTrailAdviceTest extends ComponentTest {
         Mockito.doReturn(false).when(entityStateLogger).isNew(Mockito.any());
         Mockito.doReturn(true).when(entityStateLogger).isPreviousStateLoaded(Mockito.any());
 
-        auditTrailAdvice.adviceEntityUpdate(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
 
         Mockito.verify(entityStateLogger, Mockito.never())
                 .setPreviousState(Mockito.any(), Mockito.any());
@@ -173,7 +182,7 @@ class AuditTrailAdviceTest extends ComponentTest {
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
 
-        auditTrailAdvice.adviceEntityDelete(proceedingJoinPoint);
+        entityManagerAdvice.adviceEntityDelete(proceedingJoinPoint);
 
         Mockito.verify(proceedingJoinPoint, Mockito.times(1))
                 .proceed(args);

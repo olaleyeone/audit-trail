@@ -1,2 +1,3 @@
 include "${projectName}-api",
+        "${projectName}-jpa",
         "${projectName}-spring-data-jpa"

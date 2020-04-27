@@ -3,6 +3,7 @@ package com.olaleyeone.audittrail.advice;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,11 @@ class EntityManagerPointcutTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    @BeforeEach
+    public void setUp(){
+        Mockito.reset(advice);
+    }
 
     @Test
     void persist() {
