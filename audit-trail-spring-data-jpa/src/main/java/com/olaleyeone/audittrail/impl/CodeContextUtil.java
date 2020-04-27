@@ -10,12 +10,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class CodeContextUtil {
+public final class CodeContextUtil {
+
+    private static final ThreadLocal<Map<Throwable, CodeContext>> errorThreadLocal = new ThreadLocal<>();
 
     private CodeContextUtil() {
     }
-
-    private static final ThreadLocal<Map<Throwable, CodeContext>> errorThreadLocal = new ThreadLocal<>();
 
     public static Activity getActivityAnnotation(MethodSignature methodSignature) {
         return methodSignature.getMethod().getDeclaredAnnotation(Activity.class);
