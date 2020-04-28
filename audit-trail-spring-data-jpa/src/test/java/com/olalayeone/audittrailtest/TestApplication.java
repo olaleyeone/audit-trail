@@ -14,7 +14,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class TestApplication {
 
     @Bean
-    public EntityManagerAdvice auditTrailAdvice() {
+    public EntityManagerAdvice entityManagerAdvice() {
         return Mockito.mock(EntityManagerAdvice.class);
     }
 
