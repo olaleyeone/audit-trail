@@ -1,5 +1,6 @@
 package com.olalayeone.audittrailtest.data.entity;
 
+import com.olaleyeone.audittrail.embeddable.Audit;
 import lombok.Data;
 
 import javax.persistence.Embedded;

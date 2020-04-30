@@ -4,6 +4,7 @@ import com.olalayeone.audittrailtest.EntityTest;
 import com.olalayeone.audittrailtest.data.entity.*;
 import com.olaleyeone.audittrail.api.AuditData;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
+import com.olaleyeone.audittrail.embeddable.Audit;
 import org.hibernate.proxy.HibernateProxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,8 +59,8 @@ class EntityDataExtractorImplTest extends EntityTest {
         assertFalse(entityData.containsKey("audit"));
         assertTrue(entityData.containsKey("audit.createdOn"));
         assertTrue(entityData.containsKey("audit.createdBy"));
-        assertTrue(entityData.containsKey("audit.updatedOn"));
-        assertTrue(entityData.containsKey("audit.updatedBy"));
+        assertTrue(entityData.containsKey("audit.lastUpdatedOn"));
+        assertTrue(entityData.containsKey("audit.lastUpdatedBy"));
     }
 
     @Test
@@ -71,8 +72,8 @@ class EntityDataExtractorImplTest extends EntityTest {
         assertFalse(entityData.get("audit").getData().isPresent());
         assertFalse(entityData.containsKey("audit.createdOn"));
         assertFalse(entityData.containsKey("audit.createdBy"));
-        assertFalse(entityData.containsKey("audit.updatedOn"));
-        assertFalse(entityData.containsKey("audit.updatedBy"));
+        assertFalse(entityData.containsKey("audit.lastUpdatedOn"));
+        assertFalse(entityData.containsKey("audit.lastUpdatedBy"));
     }
 
     @Test
