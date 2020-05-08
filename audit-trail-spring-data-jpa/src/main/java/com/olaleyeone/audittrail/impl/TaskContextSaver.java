@@ -47,8 +47,14 @@ public class TaskContextSaver {
             Optional<Task> savedTask = taskRepository.findById(task.getId());
             if (savedTask.isPresent()) {
                 entityManager.merge(task);
+                if (task.getWebRequest() != null) {
+                    entityManager.merge(task.getWebRequest());
+                }
             } else {
                 task.setId(null);
+                if (task.getWebRequest() != null) {
+                    task.getWebRequest().setId(null);
+                }
                 entityManager.persist(task);
             }
         }

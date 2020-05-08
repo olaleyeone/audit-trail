@@ -18,6 +18,7 @@ public class WebRequest {
     private String ipAddress;
     @Lob
     private String userAgent;
+    @Column(nullable = false)
     @Lob
     private String uri;
     private Integer statusCode;

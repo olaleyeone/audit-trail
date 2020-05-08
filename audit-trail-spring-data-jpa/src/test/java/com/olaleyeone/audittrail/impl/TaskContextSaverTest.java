@@ -5,6 +5,7 @@ import com.olalayeone.audittrailtest.EntityTest;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
+import com.olaleyeone.audittrail.entity.WebRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,10 +56,16 @@ class TaskContextSaverTest extends EntityTest {
     @Transactional
     @Test
     void saveTaskInLimbo() {
+        WebRequest webRequest = new WebRequest();
+        webRequest.setUri(faker.internet().url());
+        webRequest.setId(1L);
         Task task = dataFactory.getTask(false);
         task.setId(20L);
+        task.setWebRequest(webRequest);
+
         taskContextSaver.saveTask(task);
         assertNotNull(task.getId());
+        assertNotNull(task.getWebRequest().getId());
     }
 
     @Transactional

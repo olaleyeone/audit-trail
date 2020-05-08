@@ -25,7 +25,8 @@ public class Task {
     @Lob
     private String description;
 
-    @OneToOne(cascade = CascadeType.PERSIST)
+    @OneToOne(cascade = {CascadeType.PERSIST})
+    @JoinColumn(updatable = false)
     private WebRequest webRequest;
 
     @Embedded
