@@ -110,7 +110,7 @@ class TaskTransactionContextFactoryTest extends EntityTest {
         taskContext.start(null);
         transactionTemplate.execute(status -> {
             TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.getObject();
-            taskContext.execute(faker.lordOfTheRings().location(), () -> null);
+            taskContext.execute(faker.lordOfTheRings().location(), () -> {});
 
             assertEquals(2, taskContext.getTaskActivities().size());
             assertEquals(1, taskTransactionContext.getTaskActivities().size());

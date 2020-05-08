@@ -119,11 +119,11 @@ class ActivityAdviceTest extends ComponentTest {
         Mockito.doAnswer(invocation -> {
             TaskContextImpl taskContext2 = taskContextHolder.getObject();
             list.add(taskContext2.getTaskActivity().get());
-            return taskContext2.execute("abc", () -> {
+            taskContext2.execute("abc", () -> {
                 list.add(taskContextHolder.getObject().getTaskActivity().get());
                 new Target().activity();
-                return null;
             });
+            return null;
         }).when(proceedingJoinPoint).proceed(Mockito.any());
 
         try {

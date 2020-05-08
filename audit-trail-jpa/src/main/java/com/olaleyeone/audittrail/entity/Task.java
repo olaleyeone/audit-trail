@@ -1,11 +1,9 @@
 package com.olaleyeone.audittrail.entity;
 
 import com.olaleyeone.audittrail.embeddable.Duration;
-import com.olaleyeone.audittrail.embeddable.WebRequest;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -27,7 +25,7 @@ public class Task {
     @Lob
     private String description;
 
-    @Embedded
+    @OneToOne(cascade = CascadeType.PERSIST)
     private WebRequest webRequest;
 
     @Embedded

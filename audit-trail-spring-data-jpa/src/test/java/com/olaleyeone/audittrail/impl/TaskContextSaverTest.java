@@ -138,10 +138,10 @@ class TaskContextSaverTest extends EntityTest {
         TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
         taskContext.start(null);
 
-        List<TaskActivity> taskActivities = taskContext.execute("1", () -> {
+        List<TaskActivity> taskActivities = taskContext.executeAndReturn("1", () -> {
             TaskContextImpl taskContext1 = taskContextHolder.getObject();
             TaskActivity taskActivity1 = taskContext1.getTaskActivity().get();
-            TaskActivity taskActivity2 = taskContext1.execute("1A", () -> taskContextHolder.getObject().getTaskActivity().get());
+            TaskActivity taskActivity2 = taskContext1.executeAndReturn("1A", () -> taskContextHolder.getObject().getTaskActivity().get());
             return Arrays.asList(taskActivity1, taskActivity2);
         });
 
@@ -184,7 +184,7 @@ class TaskContextSaverTest extends EntityTest {
             TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.getObject();
             EntityIdentifier entityIdentifier = new EntityIdentifier(String.class, String.class.getSimpleName(), 1);
             taskTransactionContext.getEntityStateLogger().registerDeletedEntity(entityIdentifier);
-            return taskContext.execute("1", () -> taskContextHolder.getObject().getTaskActivity().get());
+            return taskContext.executeAndReturn("1", () -> taskContextHolder.getObject().getTaskActivity().get());
         });
         transactionTemplate.execute(status -> {
             taskContextSaver.save(taskContext);

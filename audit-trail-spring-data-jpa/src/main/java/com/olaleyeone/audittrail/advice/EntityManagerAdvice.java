@@ -9,7 +9,7 @@ import com.olaleyeone.audittrail.Audited;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
 import com.olaleyeone.audittrail.api.EntityStateLogger;
-import com.olaleyeone.audittrail.embeddable.WebRequest;
+import com.olaleyeone.audittrail.entity.WebRequest;
 import com.olaleyeone.audittrail.impl.TaskTransactionContext;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;

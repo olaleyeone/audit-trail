@@ -4,6 +4,7 @@ import com.olaleyeone.audittrail.advice.ActivityAdvice;
 import com.olaleyeone.audittrail.advice.EntityManagerAdvice;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.impl.*;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,10 +39,8 @@ public abstract class AuditTrailConfiguration {
     }
 
     @Bean
-    public TaskContextFactory taskContextFactory(
-            TaskContextHolder taskContextHolder,
-            TaskTransactionContextFactory taskTransactionContextFactory) {
-        return new TaskContextFactory(taskContextHolder, taskTransactionContextFactory);
+    public TaskContextFactory taskContextFactory(AutowireCapableBeanFactory beanFactory) {
+        return beanFactory.createBean(TaskContextFactory.class);
     }
 
     @Bean

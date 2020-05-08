@@ -7,6 +7,7 @@ import com.olaleyeone.audittrail.entity.TaskActivity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,12 +17,15 @@ class TaskContextFactoryTest extends ComponentTest {
     private TaskContextHolder taskContextHolder;
 
     @Mock
+    private TaskContextSaver taskContextSaver;
+
+    @Mock
     private TaskTransactionContextFactory taskTransactionContextFactory;
 
     @BeforeEach
     void setUp() {
         taskContextHolder = new TaskContextHolder();
-        taskContextFactory = new TaskContextFactory(taskContextHolder, taskTransactionContextFactory);
+        taskContextFactory = new TaskContextFactory(taskContextHolder, taskTransactionContextFactory, taskContextSaver);
     }
 
     @Test
@@ -36,7 +40,7 @@ class TaskContextFactoryTest extends ComponentTest {
     void testTwoLevels() {
         Task task = new Task();
         TaskContextImpl initialContext = taskContextFactory.start(task);
-        TaskContextImpl childContext = initialContext.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
+        TaskContextImpl childContext = initialContext.executeAndReturn(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             TaskContextImpl context2 = taskContextHolder.getObject();
             assertNotSame(initialContext, context2);
             assertSame(initialContext.getTask(), context2.getTask());
@@ -63,7 +67,7 @@ class TaskContextFactoryTest extends ComponentTest {
         String description = faker.lordOfTheRings().location();
         Task task = new Task();
         TaskContextImpl context1 = taskContextFactory.start(task);
-        TaskActivity child = context1.execute(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
+        TaskActivity child = context1.executeAndReturn(faker.lordOfTheRings().location(), faker.lordOfTheRings().character(), () -> {
             TaskContextImpl context2 = taskContextHolder.getObject();
             context2.setDescription(description);
             return context2.getTaskActivity().get();
@@ -84,9 +88,7 @@ class TaskContextFactoryTest extends ComponentTest {
                 assertNotSame(context2.getTaskActivity().get(), context3.getTaskActivity().get());
                 assertNotNull(context3.getTaskActivity().get().getParentActivity());
                 assertSame(context2.getTaskActivity().get(), context3.getTaskActivity().get().getParentActivity());
-                return null;
             });
-            return null;
         });
     }
 
@@ -100,5 +102,38 @@ class TaskContextFactoryTest extends ComponentTest {
         assertFalse(context1.getTaskActivities().isEmpty());
         TaskActivity taskActivity = context1.getTaskActivities().iterator().next();
         assertEquals(TaskActivity.Status.FAILED, taskActivity.getStatus());
+    }
+
+    @Test
+    public void startBackgroundTask() {
+        String name = faker.funnyName().name();
+        String description = faker.backToTheFuture().quote();
+        Task task = taskContextFactory.startBackgroundTask(name, description, () -> {
+        });
+        assertNotNull(task);
+        assertEquals(name, task.getName());
+        assertEquals(description, task.getDescription());
+        Mockito.verify(taskContextSaver, Mockito.times(1))
+                .save(Mockito.argThat(argument -> {
+                    assertSame(task, argument.getTask());
+                    return true;
+                }));
+    }
+
+    @Test
+    public void startBackgroundTaskWithError() {
+        String name = faker.funnyName().name();
+        String description = faker.backToTheFuture().quote();
+        Task task = taskContextFactory.startBackgroundTask(name, description, () -> {
+            throw new RuntimeException();
+        });
+        assertNotNull(task);
+        assertEquals(name, task.getName());
+        assertEquals(description, task.getDescription());
+        Mockito.verify(taskContextSaver, Mockito.times(1))
+                .save(Mockito.argThat(argument -> {
+                    assertSame(task, argument.getTask());
+                    return true;
+                }));
     }
 }
