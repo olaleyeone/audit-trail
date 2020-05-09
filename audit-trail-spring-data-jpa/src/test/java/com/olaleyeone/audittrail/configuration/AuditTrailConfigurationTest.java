@@ -20,7 +20,7 @@ class AuditTrailConfigurationTest {
 
     @Test
     public void test() {
-
+        //test is successful configuration
     }
 
     @SpringBootApplication

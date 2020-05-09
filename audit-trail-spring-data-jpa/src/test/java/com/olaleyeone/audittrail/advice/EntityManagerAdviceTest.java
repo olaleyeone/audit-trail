@@ -42,13 +42,11 @@ class EntityManagerAdviceTest extends ComponentTest {
     @Mock
     private TaskContextImpl taskContext;
 
-    private DataFactory dataFactory;
-
     private TaskActivity taskActivity;
 
     @BeforeEach
     public void setUp() {
-        dataFactory = new DataFactory();
+        DataFactory dataFactory = new DataFactory();
         taskActivity = dataFactory.getTaskActivity(false);
         Mockito.doReturn(Optional.of(taskActivity)).when(taskContext).getTaskActivity();
         entityManagerAdvice = new EntityManagerAdvice(entityDataExtractor, new Provider<TaskTransactionContext>() {

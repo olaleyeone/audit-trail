@@ -110,14 +110,7 @@ class TaskContextFactoryTest extends ComponentTest {
         String description = faker.backToTheFuture().quote();
         Task task = taskContextFactory.startBackgroundTask(name, description, () -> {
         });
-        assertNotNull(task);
-        assertEquals(name, task.getName());
-        assertEquals(description, task.getDescription());
-        Mockito.verify(taskContextSaver, Mockito.times(1))
-                .save(Mockito.argThat(argument -> {
-                    assertSame(task, argument.getTask());
-                    return true;
-                }));
+        validateTaskProperties(name, description, task);
     }
 
     @Test
@@ -127,6 +120,10 @@ class TaskContextFactoryTest extends ComponentTest {
         Task task = taskContextFactory.startBackgroundTask(name, description, () -> {
             throw new RuntimeException();
         });
+        validateTaskProperties(name, description, task);
+    }
+
+    private void validateTaskProperties(String name, String description, Task task) {
         assertNotNull(task);
         assertEquals(name, task.getName());
         assertEquals(description, task.getDescription());
