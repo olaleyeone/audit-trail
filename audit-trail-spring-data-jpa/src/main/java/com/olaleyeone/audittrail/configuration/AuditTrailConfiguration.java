@@ -43,7 +43,6 @@ public abstract class AuditTrailConfiguration {
         return beanFactory.createBean(TaskContextFactory.class);
     }
 
-    @Bean
     public EntityManagerAdvice entityManagerAdvice(
             EntityDataExtractor entityDataExtractor,
             Provider<TaskTransactionContext> taskTransactionContextProvider) {

@@ -1,7 +1,9 @@
 package com.olaleyeone.audittrail.configuration;
 
+import com.olaleyeone.audittrail.advice.EntityManagerAdvice;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.impl.EntityDataExtractorImpl;
+import com.olaleyeone.audittrail.impl.TaskTransactionContext;
 import com.olaleyeone.audittrail.repository.TaskActivityRepository;
 import com.olaleyeone.audittrail.repository.TaskRepository;
 import org.junit.jupiter.api.Test;
@@ -10,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 
+import javax.inject.Provider;
 import javax.persistence.EntityManager;
 
 @SpringBootTest(classes = AuditTrailConfigurationTest.$Config.class)
@@ -31,6 +34,12 @@ class AuditTrailConfigurationTest {
                     return e.getClass();
                 }
             };
+        }
+
+        @Bean
+        @Override
+        public EntityManagerAdvice entityManagerAdvice(EntityDataExtractor entityDataExtractor, Provider<TaskTransactionContext> taskTransactionContextProvider) {
+            return super.entityManagerAdvice(entityDataExtractor, taskTransactionContextProvider);
         }
 
         @Bean
