@@ -1,6 +1,6 @@
 package com.olaleyeone.audittrail.impl;
 
-import com.olaleyeone.audittrail.context.Action;
+import com.olaleyeone.audittrail.context.ActionWithResult;
 import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 
@@ -11,11 +11,11 @@ public class ActivityRunner {
 
     private static final ActivityRunner INSTANCE = new ActivityRunner();
 
-    public static <E> E startActivity(TaskContextImpl parentContext, TaskActivity taskActivity, Action<E> action) throws Throwable {
+    public static <E> E startActivity(TaskContextImpl parentContext, TaskActivity taskActivity, ActionWithResult<E> action) throws Throwable {
         return INSTANCE._startActivity(parentContext, taskActivity, action);
     }
 
-    private <E> E _startActivity(TaskContextImpl parentContext, TaskActivity taskActivity, Action<E> action) throws Throwable {
+    private <E> E _startActivity(TaskContextImpl parentContext, TaskActivity taskActivity, ActionWithResult<E> action) throws Throwable {
 
         TaskContextImpl taskContext = new TaskContextImpl(taskActivity, parentContext.getTaskContextHolder(), parentContext.getTaskTransactionContextFactory());
         taskContext.start(parentContext);

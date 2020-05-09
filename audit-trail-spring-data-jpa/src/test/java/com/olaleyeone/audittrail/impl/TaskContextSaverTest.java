@@ -5,6 +5,7 @@ import com.olalayeone.audittrailtest.EntityTest;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
+import com.olaleyeone.audittrail.entity.WebRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,10 +56,16 @@ class TaskContextSaverTest extends EntityTest {
     @Transactional
     @Test
     void saveTaskInLimbo() {
+        WebRequest webRequest = new WebRequest();
+        webRequest.setUri(faker.internet().url());
+        webRequest.setId(1L);
         Task task = dataFactory.getTask(false);
         task.setId(20L);
+        task.setWebRequest(webRequest);
+
         taskContextSaver.saveTask(task);
         assertNotNull(task.getId());
+        assertNotNull(task.getWebRequest().getId());
     }
 
     @Transactional
@@ -138,10 +145,10 @@ class TaskContextSaverTest extends EntityTest {
         TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
         taskContext.start(null);
 
-        List<TaskActivity> taskActivities = taskContext.execute("1", () -> {
+        List<TaskActivity> taskActivities = taskContext.executeAndReturn("1", () -> {
             TaskContextImpl taskContext1 = taskContextHolder.getObject();
             TaskActivity taskActivity1 = taskContext1.getTaskActivity().get();
-            TaskActivity taskActivity2 = taskContext1.execute("1A", () -> taskContextHolder.getObject().getTaskActivity().get());
+            TaskActivity taskActivity2 = taskContext1.executeAndReturn("1A", () -> taskContextHolder.getObject().getTaskActivity().get());
             return Arrays.asList(taskActivity1, taskActivity2);
         });
 
@@ -184,7 +191,7 @@ class TaskContextSaverTest extends EntityTest {
             TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.getObject();
             EntityIdentifier entityIdentifier = new EntityIdentifier(String.class, String.class.getSimpleName(), 1);
             taskTransactionContext.getEntityStateLogger().registerDeletedEntity(entityIdentifier);
-            return taskContext.execute("1", () -> taskContextHolder.getObject().getTaskActivity().get());
+            return taskContext.executeAndReturn("1", () -> taskContextHolder.getObject().getTaskActivity().get());
         });
         transactionTemplate.execute(status -> {
             taskContextSaver.save(taskContext);

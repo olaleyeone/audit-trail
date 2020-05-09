@@ -1,10 +1,14 @@
 package com.olaleyeone.audittrail.advice;
 
 import com.ComponentTest;
+import com.olalayeone.audittrailtest.DataFactory;
+import com.olaleyeone.audittrail.Audited;
 import com.olaleyeone.audittrail.api.AuditData;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
-import com.olaleyeone.audittrail.api.EntityStateLogger;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
+import com.olaleyeone.audittrail.api.EntityStateLogger;
+import com.olaleyeone.audittrail.embeddable.Audit;
+import com.olaleyeone.audittrail.entity.WebRequest;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import com.olaleyeone.audittrail.impl.TaskTransactionContext;
@@ -38,9 +42,13 @@ class EntityManagerAdviceTest extends ComponentTest {
     @Mock
     private TaskContextImpl taskContext;
 
+    private TaskActivity taskActivity;
+
     @BeforeEach
     public void setUp() {
-        Mockito.doReturn(Optional.of(new TaskActivity())).when(taskContext).getTaskActivity();
+        DataFactory dataFactory = new DataFactory();
+        taskActivity = dataFactory.getTaskActivity(false);
+        Mockito.doReturn(Optional.of(taskActivity)).when(taskContext).getTaskActivity();
         entityManagerAdvice = new EntityManagerAdvice(entityDataExtractor, new Provider<TaskTransactionContext>() {
 
             @Override
@@ -160,7 +168,8 @@ class EntityManagerAdviceTest extends ComponentTest {
     @Test
     void adviceEntityUpdateShouldNotSetLoadedStateMoreThanOnce() throws Throwable {
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Object[] args = new Object[]{new Object()};
+        Audit audit = Mockito.mock(Audit.class);
+        Object[] args = new Object[]{(Audited) () -> audit};
         Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
@@ -172,6 +181,45 @@ class EntityManagerAdviceTest extends ComponentTest {
 
         Mockito.verify(entityStateLogger, Mockito.never())
                 .setPreviousState(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void adviceEntityUpdateShouldSetCreatedByForNew() throws Throwable {
+        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        Audit audit = Mockito.mock(Audit.class);
+        Object[] args = new Object[]{(Audited) () -> audit};
+        Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
+
+        WebRequest webRequest = new WebRequest();
+        webRequest.setUserId(faker.number().digit());
+        taskActivity.getTask().setWebRequest(webRequest);
+
+        Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
+
+        entityManagerAdvice.adviceEntityCreation(proceedingJoinPoint);
+
+        Mockito.verify(audit, Mockito.times(1))
+                .setCreatedBy(webRequest.getUserId());
+    }
+
+    @Test
+    void adviceEntityUpdateShouldSetUpdatedByForUpdate() throws Throwable {
+        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        Audit audit = Mockito.mock(Audit.class);
+        Object[] args = new Object[]{(Audited) () -> audit};
+        Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
+
+        WebRequest webRequest = new WebRequest();
+        webRequest.setUserId(faker.number().digit());
+        taskActivity.getTask().setWebRequest(webRequest);
+
+        Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
+        Mockito.doReturn(false).when(entityStateLogger).isNew(Mockito.any());
+
+        entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
+
+        Mockito.verify(audit, Mockito.times(1))
+                .setLastUpdatedBy(webRequest.getUserId());
     }
 
     @Test

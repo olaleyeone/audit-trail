@@ -5,9 +5,11 @@
  */
 package com.olaleyeone.audittrail.advice;
 
+import com.olaleyeone.audittrail.Audited;
 import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
 import com.olaleyeone.audittrail.api.EntityStateLogger;
+import com.olaleyeone.audittrail.entity.WebRequest;
 import com.olaleyeone.audittrail.impl.TaskTransactionContext;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -33,10 +35,16 @@ public class EntityManagerAdvice implements EntityManagerPointcut {
         Object result = jp.proceed(jp.getArgs());
         Object entity = jp.getArgs()[0];
 
-        EntityStateLogger entityStateLogger = transactionContextProvider.get().getEntityStateLogger();
+        TaskTransactionContext taskTransactionContext = transactionContextProvider.get();
+        EntityStateLogger entityStateLogger = taskTransactionContext.getEntityStateLogger();
         EntityIdentifier entityIdentifier = entityDataExtractor.getIdentifier(entity);
         entityStateLogger.registerNewEntity(entityIdentifier);
         entityStateLogger.setCurrentState(entityIdentifier, entityDataExtractor.extractAttributes(entity));
+
+        WebRequest webRequest = taskTransactionContext.getTask().getWebRequest();
+        if (entity instanceof Audited && webRequest != null) {
+            ((Audited) entity).getAudit().setCreatedBy(webRequest.getUserId());
+        }
 
         return result;
     }
@@ -46,10 +54,17 @@ public class EntityManagerAdvice implements EntityManagerPointcut {
         Object entity = jp.getArgs()[0];
 
         EntityIdentifier entityIdentifier = entityDataExtractor.getIdentifier(entity);
-        EntityStateLogger entityStateLogger = transactionContextProvider.get().getEntityStateLogger();
-        if (!entityStateLogger.isNew(entityIdentifier) && !entityStateLogger.isPreviousStateLoaded(entityIdentifier)) {
-            Object loadedEntity = entityDataExtractor.getEntityBeforeOperation(entityIdentifier);
-            entityStateLogger.setPreviousState(entityIdentifier, entityDataExtractor.extractAttributes(loadedEntity));
+        TaskTransactionContext taskTransactionContext = transactionContextProvider.get();
+        EntityStateLogger entityStateLogger = taskTransactionContext.getEntityStateLogger();
+        if (!entityStateLogger.isNew(entityIdentifier)) {
+            if (!entityStateLogger.isPreviousStateLoaded(entityIdentifier)) {
+                Object loadedEntity = entityDataExtractor.getEntityBeforeOperation(entityIdentifier);
+                entityStateLogger.setPreviousState(entityIdentifier, entityDataExtractor.extractAttributes(loadedEntity));
+            }
+            WebRequest webRequest = taskTransactionContext.getTask().getWebRequest();
+            if (entity instanceof Audited && webRequest != null) {
+                ((Audited) entity).getAudit().setLastUpdatedBy(webRequest.getUserId());
+            }
         }
 
         entityStateLogger.setCurrentState(entityIdentifier, entityDataExtractor.extractAttributes(entity));

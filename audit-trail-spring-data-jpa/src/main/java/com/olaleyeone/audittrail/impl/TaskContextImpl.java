@@ -1,6 +1,7 @@
 package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.context.Action;
+import com.olaleyeone.audittrail.context.ActionWithResult;
 import com.olaleyeone.audittrail.context.TaskContext;
 import com.olaleyeone.audittrail.entity.CodeContext;
 import com.olaleyeone.audittrail.entity.Task;
@@ -50,16 +51,36 @@ public class TaskContextImpl implements TaskContext {
 
     @SneakyThrows
     @Override
-    public <E> E execute(String name, Action<E> action) {
+    public <E> E executeAndReturn(String name, ActionWithResult<E> action) {
         TaskActivity taskActivity = createTaskActivity(name, null);
         return ActivityRunner.startActivity(this, taskActivity, action);
     }
 
     @SneakyThrows
     @Override
-    public <E> E execute(String name, String description, Action<E> action) {
+    public <E> E executeAndReturn(String name, String description, ActionWithResult<E> action) {
         TaskActivity taskActivity = createTaskActivity(name, description);
         return ActivityRunner.startActivity(this, taskActivity, action);
+    }
+
+    @SneakyThrows
+    @Override
+    public void execute(String name, String description, Action action) {
+        TaskActivity taskActivity = createTaskActivity(name, description);
+        ActivityRunner.startActivity(this, taskActivity, () -> {
+            action.execute();
+            return null;
+        });
+    }
+
+    @SneakyThrows
+    @Override
+    public void execute(String name, Action action) {
+        TaskActivity taskActivity = createTaskActivity(name, null);
+        ActivityRunner.startActivity(this, taskActivity, () -> {
+            action.execute();
+            return null;
+        });
     }
 
     @Override
