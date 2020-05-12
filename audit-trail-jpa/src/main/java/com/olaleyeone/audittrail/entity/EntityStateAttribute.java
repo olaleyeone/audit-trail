@@ -16,9 +16,14 @@ public class EntityStateAttribute {
     private EntityState entityState;
 
     private String name;
-    @Lob
-    private String value;
 
     private boolean modified;
+
+    private boolean hasPreviousValue;
+    private boolean hasNewValue;
+
+    @Lob
+    private String newValue;
+    @Lob
     private String previousValue;
 }

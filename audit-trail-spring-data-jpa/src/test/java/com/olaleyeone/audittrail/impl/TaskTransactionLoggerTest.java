@@ -151,7 +151,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         assertEquals(entityState, attribute.getEntityState());
         assertEquals(data.isModified(), attribute.isModified());
         assertEquals(data.getPreviousValue().getTextValue().get(), attribute.getPreviousValue());
-        assertEquals(data.getValue().getTextValue().get(), attribute.getValue());
+        assertEquals(data.getValue().getTextValue().get(), attribute.getNewValue());
     }
 
     private List<EntityOperation> getEntityHistoryLogs() {

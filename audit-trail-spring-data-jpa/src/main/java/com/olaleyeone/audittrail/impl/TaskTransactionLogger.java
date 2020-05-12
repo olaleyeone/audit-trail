@@ -74,8 +74,12 @@ public class TaskTransactionLogger {
         entityStateAttribute.setName(field.getKey());
         EntityAttributeData historyData = field.getValue();
         entityStateAttribute.setModified(historyData.isModified());
+
+        entityStateAttribute.setHasPreviousValue(historyData.getPreviousValue().getData().isPresent());
+        entityStateAttribute.setHasNewValue(historyData.getValue().getData().isPresent());
+        
         historyData.getPreviousValue().getTextValue().ifPresent(entityStateAttribute::setPreviousValue);
-        historyData.getValue().getTextValue().ifPresent(entityStateAttribute::setValue);
+        historyData.getValue().getTextValue().ifPresent(entityStateAttribute::setNewValue);
 
         entityManager.persist(entityStateAttribute);
         return entityStateAttribute;
