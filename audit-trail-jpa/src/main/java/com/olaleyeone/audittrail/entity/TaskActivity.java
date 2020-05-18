@@ -25,7 +25,7 @@ public class TaskActivity {
     @Column(nullable = false)
     private String name;
 
-    @Lob
+    @Column(columnDefinition="TEXT")
     private String description;
 
     @Column(nullable = false)
@@ -41,9 +41,9 @@ public class TaskActivity {
     @Column(nullable = false)
     private TaskActivity.Status status;
 
-    @Lob
+    @Column(columnDefinition="TEXT")
     private String failureType;
-    @Lob
+    @Column(columnDefinition="TEXT")
     private String failureReason;
 
     @ManyToOne(cascade = CascadeType.PERSIST)

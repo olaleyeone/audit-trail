@@ -22,8 +22,8 @@ public class EntityStateAttribute {
     private boolean hasPreviousValue;
     private boolean hasNewValue;
 
-    @Lob
+    @Column(columnDefinition="TEXT")
     private String newValue;
-    @Lob
+    @Column(columnDefinition="TEXT")
     private String previousValue;
 }

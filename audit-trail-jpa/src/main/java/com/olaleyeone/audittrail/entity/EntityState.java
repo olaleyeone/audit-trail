@@ -16,8 +16,7 @@ public class EntityState {
     @ManyToOne(optional = false)
     private TaskTransaction taskTransaction;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition="TEXT")
     private String entityName;
     @Column(nullable = false)
     private String entityId;

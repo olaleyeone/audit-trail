@@ -30,15 +30,13 @@ public class TaskTransactionLogger {
         taskTransactionContext.getEntityStateLogger().getOperations()
                 .forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
 
-        taskTransactionContext.getTaskActivities().forEach(activityInTransaction -> {
-            entityManager.persist(activityInTransaction);
-        });
+        taskTransactionContext.getTaskActivities()
+                .forEach(activityInTransaction -> entityManager.persist(activityInTransaction));
         return taskTransaction;
     }
 
     TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, LocalDateTime startTime) {
         TaskTransaction taskTransaction = new TaskTransaction();
-//        taskTransaction.setStatus(status);
 
         TaskActivity taskActivity = taskTransactionContext.getTaskActivity();
 
@@ -77,7 +75,7 @@ public class TaskTransactionLogger {
 
         entityStateAttribute.setHasPreviousValue(historyData.getPreviousValue().getData().isPresent());
         entityStateAttribute.setHasNewValue(historyData.getValue().getData().isPresent());
-        
+
         historyData.getPreviousValue().getTextValue().ifPresent(entityStateAttribute::setPreviousValue);
         historyData.getValue().getTextValue().ifPresent(entityStateAttribute::setNewValue);
 
