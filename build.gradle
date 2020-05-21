@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 subprojects {
     apply plugin: 'java-library'
 
@@ -16,5 +18,28 @@ subprojects {
 
     test {
         useJUnitPlatform()
+    }
+
+    task copyJarToRoot {
+        doLast {
+            try {
+                Files.walk(buildDir.toPath().resolve("libs")).forEach {
+                    def fileName = it.toFile().name
+                    if (!fileName.endsWith(".jar")) {
+                        return
+                    }
+                    def destination = rootProject.buildDir.toPath().resolve("libs").resolve(fileName)
+                    Files.deleteIfExists(destination)
+                    Files.createDirectories(destination.parent)
+                    Files.copy(it, destination)
+                }
+            } catch (Exception e) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    build {
+        finalizedBy copyJarToRoot
     }
 }

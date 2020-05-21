@@ -5,6 +5,7 @@ import lombok.Data;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import java.time.LocalDateTime;
 
 @Data
@@ -13,6 +14,7 @@ public class Audit {
 
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdOn;
+
     private String createdBy;
 
     private LocalDateTime lastUpdatedOn;
@@ -24,5 +26,13 @@ public class Audit {
             return;
         }
         createdOn = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        if (lastUpdatedOn != null) {
+            return;
+        }
+        lastUpdatedOn = LocalDateTime.now();
     }
 }
