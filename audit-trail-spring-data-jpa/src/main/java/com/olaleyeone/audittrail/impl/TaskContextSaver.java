@@ -61,7 +61,9 @@ public class TaskContextSaver {
     }
 
     protected void saveActivities(TaskContextImpl taskContext, List<Long> generatedIds) {
-        Map<Long, TaskActivity> savedActivities = generatedIds.isEmpty() ? Collections.EMPTY_MAP : taskActivityRepository.findAllById(generatedIds)
+        Map<Long, TaskActivity> savedActivities = generatedIds.isEmpty()
+                ? Collections.EMPTY_MAP
+                : taskActivityRepository.findAllById(generatedIds)
                 .parallelStream()
                 .collect(Collectors.toMap(TaskActivity::getId, it -> it));
 

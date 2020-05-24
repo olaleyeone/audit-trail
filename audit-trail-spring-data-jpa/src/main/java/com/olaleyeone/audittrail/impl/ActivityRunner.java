@@ -20,6 +20,9 @@ public class ActivityRunner {
         TaskContextImpl taskContext = new TaskContextImpl(taskActivity, parentContext.getTaskContextHolder(), parentContext.getTaskTransactionContextFactory());
         taskContext.start(parentContext);
         LocalDateTime now = LocalDateTime.now();
+        taskActivity.setDuration(Duration.builder()
+                .startedOn(now)
+                .build());
 
         E result;
         try {
