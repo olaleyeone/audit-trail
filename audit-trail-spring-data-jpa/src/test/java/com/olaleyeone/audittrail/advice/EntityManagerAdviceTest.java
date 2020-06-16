@@ -8,11 +8,12 @@ import com.olaleyeone.audittrail.api.EntityDataExtractor;
 import com.olaleyeone.audittrail.api.EntityIdentifier;
 import com.olaleyeone.audittrail.api.EntityStateLogger;
 import com.olaleyeone.audittrail.embeddable.Audit;
-import com.olaleyeone.audittrail.entity.WebRequest;
 import com.olaleyeone.audittrail.entity.TaskActivity;
+import com.olaleyeone.audittrail.entity.WebRequest;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import com.olaleyeone.audittrail.impl.TaskTransactionContext;
 import com.olaleyeone.audittrail.impl.TaskTransactionLogger;
+import com.olaleyeone.audittrail.repository.TaskActivityRepository;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,6 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
-import javax.inject.Provider;
 import java.util.Map;
 import java.util.Optional;
 
@@ -34,6 +34,9 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     @Mock
     private EntityStateLogger entityStateLogger;
+
+    @Mock
+    private TaskActivityRepository taskActivityRepository;
 
     private EntityManagerAdvice entityManagerAdvice;
 
@@ -49,13 +52,9 @@ class EntityManagerAdviceTest extends ComponentTest {
         DataFactory dataFactory = new DataFactory();
         taskActivity = dataFactory.getTaskActivity(false);
         Mockito.doReturn(Optional.of(taskActivity)).when(taskContext).getTaskActivity();
-        entityManagerAdvice = new EntityManagerAdvice(entityDataExtractor, new Provider<TaskTransactionContext>() {
-
-            @Override
-            public TaskTransactionContext get() {
-                return new TaskTransactionContext(taskContext, new TaskTransactionLogger(null), entityStateLogger);
-            }
-        });
+        entityManagerAdvice = new EntityManagerAdvice(
+                entityDataExtractor,
+                () -> new TaskTransactionContext(taskContext, new TaskTransactionLogger(null), entityStateLogger));
         entityIdentifier = new EntityIdentifier(Object.class, faker.funnyName().name(), faker.number().randomDigit());
     }
 

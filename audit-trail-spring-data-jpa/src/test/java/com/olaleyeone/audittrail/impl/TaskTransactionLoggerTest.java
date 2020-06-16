@@ -109,6 +109,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
 
         List<TaskActivity> taskActivities = Arrays.asList(dataFactory.getTaskActivity(false), dataFactory.getTaskActivity(false));
+        taskActivities.forEach(taskActivity -> taskActivity.setTask(taskTransaction.getTask()));
         Mockito.doReturn(taskActivities).when(taskTransactionContext).getTaskActivities();
 
         TaskTransaction taskTransaction = taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
@@ -117,6 +118,27 @@ class TaskTransactionLoggerTest extends EntityTest {
                 .forEach(taskActivity -> {
                     assertNotNull(taskActivity.getId());
                 });
+    }
+
+    @Test
+    void shouldSaveActivityLogsWithParent() {
+
+        TaskActivity taskActivity1 = dataFactory.getTaskActivity(false);
+        TaskActivity taskActivity2 = dataFactory.getTaskActivity(false);
+        taskActivity2.setParentActivity(taskActivity1);
+
+        taskActivity1.setTask(taskTransaction.getTask());
+        taskActivity2.setTask(taskTransaction.getTask());
+
+        taskTransaction.setTaskActivity(taskActivity2);
+
+        Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
+        Mockito.doReturn(Collections.emptyList()).when(taskTransactionContext).getTaskActivities();
+
+        TaskTransaction taskTransaction = taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
+        assertEquals(TaskTransaction.Status.COMMITTED, taskTransaction.getStatus());
+        assertNotNull(taskActivity1.getId());
+        assertNotNull(taskActivity2.getId());
     }
 
     @Test

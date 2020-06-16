@@ -1,22 +1,27 @@
 package com.olaleyeone.audittrail.entity;
 
 import com.olaleyeone.audittrail.embeddable.Duration;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
 
 @Entity
-@Data
+
+@Getter
+@Setter
+@EqualsAndHashCode
 public class TaskActivity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false, cascade = CascadeType.PERSIST)
+    @ManyToOne(optional = false)
     private Task task;
 
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne
     private TaskActivity parentActivity;
 
     @ManyToOne
@@ -25,7 +30,7 @@ public class TaskActivity {
     @Column(nullable = false)
     private String name;
 
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
@@ -41,9 +46,9 @@ public class TaskActivity {
     @Column(nullable = false)
     private TaskActivity.Status status;
 
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition = "TEXT")
     private String failureType;
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition = "TEXT")
     private String failureReason;
 
     @ManyToOne(cascade = CascadeType.PERSIST)

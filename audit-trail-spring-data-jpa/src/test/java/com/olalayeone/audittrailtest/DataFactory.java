@@ -3,10 +3,7 @@ package com.olalayeone.audittrailtest;
 import com.github.javafaker.Faker;
 import com.olaleyeone.audittrail.api.OperationType;
 import com.olaleyeone.audittrail.embeddable.Duration;
-import com.olaleyeone.audittrail.entity.EntityState;
-import com.olaleyeone.audittrail.entity.Task;
-import com.olaleyeone.audittrail.entity.TaskActivity;
-import com.olaleyeone.audittrail.entity.TaskTransaction;
+import com.olaleyeone.audittrail.entity.*;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
@@ -21,6 +18,15 @@ public class DataFactory {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    public WebRequest getWebRequest(boolean persist){
+        WebRequest webRequest = new WebRequest();
+        webRequest.setUri(faker.internet().url());
+        if (persist) {
+            entityManager.persist(webRequest);
+        }
+        return webRequest;
+    }
 
     public Task getTask(boolean persist) {
         Task task = new Task();

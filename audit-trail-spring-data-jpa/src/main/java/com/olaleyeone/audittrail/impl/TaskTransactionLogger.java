@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Stack;
 
 @RequiredArgsConstructor
 public class TaskTransactionLogger {
@@ -25,6 +26,18 @@ public class TaskTransactionLogger {
     public TaskTransaction saveTaskTransaction(TaskTransactionContext taskTransactionContext) {
 
         TaskTransaction taskTransaction = taskTransactionContext.getTaskTransaction();
+        if (taskTransaction.getTask().getId() == null) {
+            entityManager.persist(taskTransaction.getTask());
+        }
+        if (taskTransaction.getTaskActivity().getId() == null) {
+            TaskActivity taskActivity = taskTransaction.getTaskActivity();
+            Stack<TaskActivity> taskActivities = new Stack<>();
+            while (taskActivity != null && taskActivity.getId() == null) {
+                taskActivities.push(taskActivity);
+                taskActivity = taskActivity.getParentActivity();
+            }
+            taskActivities.forEach(it -> entityManager.persist(it));
+        }
         entityManager.persist(taskTransaction);
 
         taskTransactionContext.getEntityStateLogger().getOperations()
