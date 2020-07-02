@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Random;
 
 @Component
@@ -30,7 +30,7 @@ public class DataFactory {
 
     public Task getTask(boolean persist) {
         Task task = new Task();
-        task.setDuration(new Duration(LocalDateTime.now(), null));
+        task.setDuration(new Duration(OffsetDateTime.now(), null));
         task.setName(faker.funnyName().name());
         task.setType(faker.app().name());
         if (persist) {
@@ -44,7 +44,7 @@ public class DataFactory {
         taskActivity.setTask(getTask(persist));
         taskActivity.setName(faker.lordOfTheRings().character());
         taskActivity.setPrecedence(1);
-        taskActivity.setDuration(new Duration(LocalDateTime.now(), null));
+        taskActivity.setDuration(new Duration(OffsetDateTime.now(), null));
         taskActivity.setStatus(TaskActivity.Status.IN_PROGRESS);
         if (persist) {
             entityManager.persist(taskActivity);
@@ -59,7 +59,7 @@ public class DataFactory {
         taskTransaction.setTask(taskActivity.getTask());
 
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(LocalDateTime.now())
+                .startedOn(OffsetDateTime.now())
                 .nanoSecondsTaken(faker.number().randomNumber())
                 .build());
 

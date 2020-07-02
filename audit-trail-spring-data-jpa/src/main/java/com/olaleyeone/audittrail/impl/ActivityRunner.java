@@ -4,7 +4,7 @@ import com.olaleyeone.audittrail.context.ActionWithResult;
 import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 
 public class ActivityRunner {
@@ -19,7 +19,7 @@ public class ActivityRunner {
 
         TaskContextImpl taskContext = new TaskContextImpl(taskActivity, parentContext.getTaskContextHolder(), parentContext.getTaskTransactionContextFactory());
         taskContext.start(parentContext);
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         taskActivity.setDuration(Duration.builder()
                 .startedOn(now)
                 .build());
@@ -35,7 +35,7 @@ public class ActivityRunner {
         } finally {
             taskActivity.setDuration(Duration.builder()
                     .startedOn(now)
-                    .nanoSecondsTaken(now.until(LocalDateTime.now(), ChronoUnit.NANOS))
+                    .nanoSecondsTaken(now.until(OffsetDateTime.now(), ChronoUnit.NANOS))
                     .build());
             taskContext.end();
         }

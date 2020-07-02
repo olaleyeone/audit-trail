@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ public class TaskTransactionContext implements TransactionSynchronization {
         this.taskTransactionLogger = taskTransactionLogger;
         this.entityStateLogger = entityStateLogger;
 
-        this.taskTransaction = taskTransactionLogger.createTaskTransaction(this, LocalDateTime.now());
+        this.taskTransaction = taskTransactionLogger.createTaskTransaction(this, OffsetDateTime.now());
     }
 
     public void addActivity(TaskActivity taskActivity) {
@@ -67,7 +67,7 @@ public class TaskTransactionContext implements TransactionSynchronization {
 
     private void setTimeTaken() {
         this.taskTransaction.getDuration().setNanoSecondsTaken(taskTransaction.getDuration().getStartedOn()
-                .until(LocalDateTime.now(), ChronoUnit.NANOS));
+                .until(OffsetDateTime.now(), ChronoUnit.NANOS));
     }
 
     @Override

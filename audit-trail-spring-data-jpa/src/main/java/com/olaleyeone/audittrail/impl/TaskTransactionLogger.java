@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Stack;
 
@@ -48,7 +48,7 @@ public class TaskTransactionLogger {
         return taskTransaction;
     }
 
-    TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, LocalDateTime startTime) {
+    TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, OffsetDateTime startTime) {
         TaskTransaction taskTransaction = new TaskTransaction();
 
         TaskActivity taskActivity = taskTransactionContext.getTaskActivity();

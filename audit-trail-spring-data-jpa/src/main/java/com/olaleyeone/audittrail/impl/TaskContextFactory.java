@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 
 @RequiredArgsConstructor
@@ -31,7 +31,7 @@ public class TaskContextFactory {
         task.setName(name);
         task.setDescription(description);
         Duration duration = Duration.builder()
-                .startedOn(LocalDateTime.now())
+                .startedOn(OffsetDateTime.now())
                 .build();
         task.setDuration(duration);
         TaskContextImpl taskContext = start(task);
@@ -40,7 +40,7 @@ public class TaskContextFactory {
         } catch (Throwable ex) {
             logger.error(ex.getMessage(), ex);
         } finally {
-            duration.setNanoSecondsTaken(duration.getStartedOn().until(LocalDateTime.now(), ChronoUnit.NANOS));
+            duration.setNanoSecondsTaken(duration.getStartedOn().until(OffsetDateTime.now(), ChronoUnit.NANOS));
             taskContextSaver.save(taskContext);
         }
         return task;

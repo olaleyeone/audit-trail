@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.metamodel.EntityType;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,7 +71,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         taskTransaction = new TaskTransaction();
         taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(LocalDateTime.now())
+                .startedOn(OffsetDateTime.now())
                 .build());
         taskTransaction.setTask(taskActivity.getTask());
         taskTransaction.setTaskActivity(taskActivity);
