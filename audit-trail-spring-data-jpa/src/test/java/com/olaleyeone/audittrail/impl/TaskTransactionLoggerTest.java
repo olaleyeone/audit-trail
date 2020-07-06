@@ -104,6 +104,34 @@ class TaskTransactionLoggerTest extends EntityTest {
     }
 
     @Test
+    void saveUnitOfWorkWithFreshTask() {
+
+        TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        Mockito.doReturn(taskActivity).when(taskTransactionContext).getTaskActivity();
+        Mockito.doReturn(taskActivity.getTask()).when(taskTransactionContext).getTask();
+
+        taskTransaction.setTask(taskActivity.getTask());
+        taskTransaction.setTaskActivity(taskActivity);
+
+        Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
+        taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
+
+        assertEquals(1, taskTransactionRepository.count());
+        assertEquals(3, entityStateRepository.count());
+        assertEquals(3, entityStateAttributeRepository.count());
+
+        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
+            EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
+            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
+                    entityIdentifier.getPrimaryKey().toString());
+            assertTrue(optionalEntityHistory.isPresent());
+            EntityState entityState = optionalEntityHistory.get();
+            entityHistoryLog.getAttributes().entrySet()
+                    .forEach(entry -> assertTrue(entityStateAttributeRepository.getByEntityHistory(entityState, entry.getKey()).isPresent()));
+        });
+    }
+
+    @Test
     void shouldSaveActivityLogs() {
 
         Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
