@@ -35,12 +35,12 @@ public class TaskTransactionLogger {
         //save parent activity
         if (taskTransaction.getTaskActivity().getId() == null) {
             TaskActivity taskActivity = taskTransaction.getTaskActivity();
-            Stack<TaskActivity> taskActivities = new Stack<>();
+            Stack<TaskActivity> activityStack = new Stack<>();
             while (taskActivity != null && taskActivity.getId() == null) {
-                taskActivities.push(taskActivity);
+                activityStack.push(taskActivity);
                 taskActivity = taskActivity.getParentActivity();
             }
-            taskActivities.forEach(it -> entityManager.persist(it));
+            activityStack.forEach(it -> entityManager.persist(it));
         }
 
         entityManager.persist(taskTransaction);

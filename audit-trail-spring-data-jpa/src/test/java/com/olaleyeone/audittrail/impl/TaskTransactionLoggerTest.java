@@ -104,14 +104,45 @@ class TaskTransactionLoggerTest extends EntityTest {
     }
 
     @Test
-    void saveUnitOfWorkWithFreshTask() {
+    void saveUnitOfWorkInNestedActivity() {
+
+        TaskActivity parentActivity = dataFactory.getTaskActivity(true);
 
         TaskActivity taskActivity = dataFactory.getTaskActivity(false);
-        Mockito.doReturn(taskActivity).when(taskTransactionContext).getTaskActivity();
-        Mockito.doReturn(taskActivity.getTask()).when(taskTransactionContext).getTask();
+        taskActivity.setParentActivity(parentActivity);
+        taskActivity.setTask(parentActivity.getTask());
 
         taskTransaction.setTask(taskActivity.getTask());
         taskTransaction.setTaskActivity(taskActivity);
+
+        Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
+
+        taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
+
+        assertNotNull(taskTransaction.getId());
+        assertEquals(3, entityStateRepository.countByUnitOfWork(taskTransaction));
+        assertEquals(3, entityStateAttributeRepository.countByUnitOfWork(taskTransaction));
+
+        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
+            EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
+            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
+                    entityIdentifier.getPrimaryKey().toString());
+            assertTrue(optionalEntityHistory.isPresent());
+            EntityState entityState = optionalEntityHistory.get();
+            entityHistoryLog.getAttributes().entrySet()
+                    .forEach(entry -> assertTrue(entityStateAttributeRepository.getByEntityHistory(entityState, entry.getKey()).isPresent()));
+        });
+    }
+
+    @Test
+    void saveUnitOfWorkWithFreshTask() {
+
+        TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        taskTransaction.setTask(taskActivity.getTask());
+        taskTransaction.setTaskActivity(taskActivity);
+
+        Mockito.doReturn(taskActivity).when(taskTransactionContext).getTaskActivity();
+        Mockito.doReturn(taskActivity.getTask()).when(taskTransactionContext).getTask();
 
         Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
         taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
