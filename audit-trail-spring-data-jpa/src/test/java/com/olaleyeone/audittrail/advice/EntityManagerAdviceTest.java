@@ -13,7 +13,6 @@ import com.olaleyeone.audittrail.entity.WebRequest;
 import com.olaleyeone.audittrail.impl.TaskContextImpl;
 import com.olaleyeone.audittrail.impl.TaskTransactionContext;
 import com.olaleyeone.audittrail.impl.TaskTransactionLogger;
-import com.olaleyeone.audittrail.repository.TaskActivityRepository;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +35,7 @@ class EntityManagerAdviceTest extends ComponentTest {
     private EntityStateLogger entityStateLogger;
 
     @Mock
-    private TaskActivityRepository taskActivityRepository;
+    private ProceedingJoinPoint proceedingJoinPoint;
 
     private EntityManagerAdvice entityManagerAdvice;
 
@@ -47,6 +46,8 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     private TaskActivity taskActivity;
 
+    private WebRequest webRequest;
+
     @BeforeEach
     public void setUp() {
         DataFactory dataFactory = new DataFactory();
@@ -56,11 +57,13 @@ class EntityManagerAdviceTest extends ComponentTest {
                 entityDataExtractor,
                 () -> new TaskTransactionContext(taskContext, new TaskTransactionLogger(null), entityStateLogger));
         entityIdentifier = new EntityIdentifier(Object.class, faker.funnyName().name(), faker.number().randomDigit());
+
+        webRequest = new WebRequest();
+        webRequest.setUserId(faker.number().digit());
     }
 
     @Test
     void adviceEntityCreation() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         Object[] args = new Object[]{new Object()};
         Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
 
@@ -85,7 +88,6 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     @Test
     void adviceEntityUpdate() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         Object[] args = new Object[]{new Object()};
         Object expectedResult = new Object();
         Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
@@ -114,7 +116,6 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     @Test
     void adviceEntityUpdateShouldSetLoadedState() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         Object[] args = new Object[]{new Object()};
         Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
 
@@ -145,12 +146,10 @@ class EntityManagerAdviceTest extends ComponentTest {
                 .setCurrentState(entityIdentifier, data);
         inOrder.verify(proceedingJoinPoint, Mockito.times(1))
                 .proceed(args);
-
     }
 
     @Test
     void adviceEntityUpdateShouldNotSetLoadedStateForNew() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         Object[] args = new Object[]{new Object()};
         Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
 
@@ -166,13 +165,9 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     @Test
     void adviceEntityUpdateShouldNotSetLoadedStateMoreThanOnce() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Audit audit = Mockito.mock(Audit.class);
-        Object[] args = new Object[]{(Audited) () -> audit};
-        Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
+        createAudit();
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
-
         Mockito.doReturn(false).when(entityStateLogger).isNew(Mockito.any());
         Mockito.doReturn(true).when(entityStateLogger).isPreviousStateLoaded(Mockito.any());
 
@@ -184,13 +179,8 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     @Test
     void adviceEntityUpdateShouldSetCreatedByForNew() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Audit audit = Mockito.mock(Audit.class);
-        Object[] args = new Object[]{(Audited) () -> audit};
-        Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
+        Audit audit = createAudit();
 
-        WebRequest webRequest = new WebRequest();
-        webRequest.setUserId(faker.number().digit());
         taskActivity.getTask().setWebRequest(webRequest);
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
@@ -203,13 +193,8 @@ class EntityManagerAdviceTest extends ComponentTest {
 
     @Test
     void adviceEntityUpdateShouldSetUpdatedByForUpdate() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Audit audit = Mockito.mock(Audit.class);
-        Object[] args = new Object[]{(Audited) () -> audit};
-        Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
+        Audit audit = createAudit();
 
-        WebRequest webRequest = new WebRequest();
-        webRequest.setUserId(faker.number().digit());
         taskActivity.getTask().setWebRequest(webRequest);
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
@@ -221,9 +206,15 @@ class EntityManagerAdviceTest extends ComponentTest {
                 .setLastUpdatedBy(webRequest.getUserId());
     }
 
+    private Audit createAudit() {
+        Audit audit = Mockito.mock(Audit.class);
+        Object[] args = new Object[]{(Audited) () -> audit};
+        Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
+        return audit;
+    }
+
     @Test
     void adviceEntityDelete() throws Throwable {
-        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         Object[] args = new Object[]{new Object()};
         Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
 
