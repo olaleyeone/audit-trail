@@ -5,17 +5,19 @@ import lombok.Data;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.PrePersist;
-import java.time.LocalDateTime;
+import javax.persistence.PreUpdate;
+import java.time.OffsetDateTime;
 
 @Data
 @Embeddable
 public class Audit {
 
     @Column(updatable = false, nullable = false)
-    private LocalDateTime createdOn;
+    private OffsetDateTime createdOn;
+
     private String createdBy;
 
-    private LocalDateTime lastUpdatedOn;
+    private OffsetDateTime lastUpdatedOn;
     private String lastUpdatedBy;
 
     @PrePersist
@@ -23,6 +25,11 @@ public class Audit {
         if (createdOn != null) {
             return;
         }
-        createdOn = LocalDateTime.now();
+        createdOn = OffsetDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        lastUpdatedOn = OffsetDateTime.now();
     }
 }

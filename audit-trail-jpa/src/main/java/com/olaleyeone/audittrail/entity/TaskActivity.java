@@ -1,22 +1,26 @@
 package com.olaleyeone.audittrail.entity;
 
 import com.olaleyeone.audittrail.embeddable.Duration;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
-@Data
+
+@Getter
+@Setter
 public class TaskActivity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false, cascade = CascadeType.PERSIST)
+    @ManyToOne(optional = false)
     private Task task;
 
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne
     private TaskActivity parentActivity;
 
     @ManyToOne
@@ -25,7 +29,7 @@ public class TaskActivity {
     @Column(nullable = false)
     private String name;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
@@ -41,9 +45,9 @@ public class TaskActivity {
     @Column(nullable = false)
     private TaskActivity.Status status;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String failureType;
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String failureReason;
 
     @ManyToOne(cascade = CascadeType.PERSIST)
@@ -51,5 +55,18 @@ public class TaskActivity {
 
     public static enum Status {
         SUCCESSFUL, FAILED, IN_PROGRESS
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TaskActivity that = (TaskActivity) o;
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

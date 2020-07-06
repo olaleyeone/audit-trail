@@ -31,13 +31,10 @@ public class TaskContextSaver {
     @Transactional
     public void save(TaskContextImpl taskContext) {
         saveTask(taskContext.getTask());
-        List<Long> generatedIds = taskContext.getActivityStream()
-                .map(TaskActivity::getId)
-                .filter(it -> it != null)
-                .collect(Collectors.toList());
 
-        saveActivities(taskContext, generatedIds);
-        saveFailedTransactions(taskContext, generatedIds);
+        saveFailedTransactions(taskContext);
+
+        saveActivities(taskContext);
     }
 
     protected void saveTask(Task task) {
@@ -60,37 +57,43 @@ public class TaskContextSaver {
         }
     }
 
-    protected void saveActivities(TaskContextImpl taskContext, List<Long> generatedIds) {
-        Map<Long, TaskActivity> savedActivities = generatedIds.isEmpty() ? Collections.EMPTY_MAP : taskActivityRepository.findAllById(generatedIds)
-                .parallelStream()
-                .collect(Collectors.toMap(TaskActivity::getId, it -> it));
-
-        taskContext.getTaskActivity().ifPresent(taskActivity -> saveTaskActivity(taskActivity, savedActivities));
-
-        taskContext.getChildren().forEach(childContext -> saveChildContext(childContext, savedActivities));
-    }
-
-    protected void saveFailedTransactions(TaskContextImpl taskContext, List<Long> generatedIds) {
+    protected void saveFailedTransactions(TaskContextImpl taskContext) {//List<Long> generatedIds
         taskContext.getAllFailedTransactionStream().sequential().forEach(taskTransactionContext -> {
-            List<Long> activityIds = taskTransactionContext.getTaskActivities().stream().map(TaskActivity::getId)
-                    .collect(Collectors.toList());
-            if (!Collections.disjoint(generatedIds, activityIds)) {
-                return;
-            }
+//            List<Long> activityIds = taskTransactionContext.getTaskActivities().stream().map(TaskActivity::getId)
+//                    .collect(Collectors.toList());
+
+//            if (!Collections.disjoint(generatedIds, activityIds)) {
+//                return;
+//            }
             taskTransactionContext.saveAfterFailure();
         });
     }
 
+    protected void saveActivities(TaskContextImpl taskContext) {
+        List<Long> generatedIds = taskContext.getActivityStream()
+                .map(TaskActivity::getId)
+                .filter(it -> it != null)
+                .collect(Collectors.toList());
+        Map<Long, TaskActivity> savedActivities = generatedIds.isEmpty()
+                ? Collections.EMPTY_MAP
+                : taskActivityRepository.findAllById(generatedIds)
+                .parallelStream()
+                .collect(Collectors.toMap(TaskActivity::getId, it -> it));
+
+        taskContext.getTaskActivity().ifPresent(taskActivity -> saveTaskActivity(taskActivity, savedActivities));
+        taskContext.getChildren().forEach(childContext -> saveChildContext(childContext, savedActivities));
+    }
+
     private void saveChildContext(TaskContextImpl activityContext, Map<Long, TaskActivity> savedActivities) {
         TaskActivity taskActivity = activityContext.getTaskActivity().get();
-        if (taskActivity.getTaskTransaction() != null) {
-            return;
-        }
         saveTaskActivity(taskActivity, savedActivities);
         activityContext.getChildren().forEach(childContext -> saveChildContext(childContext, savedActivities));
     }
 
     protected void saveTaskActivity(TaskActivity taskActivity, Map<Long, TaskActivity> savedActivities) {
+        if (taskActivity.getTaskTransaction() != null) {
+            return;
+        }
         if (taskActivity.getId() == null) {
             entityManager.persist(taskActivity);
         } else {

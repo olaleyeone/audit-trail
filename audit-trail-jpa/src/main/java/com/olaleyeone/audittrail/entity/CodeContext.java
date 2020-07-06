@@ -12,15 +12,13 @@ public class CodeContext {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition="TEXT")
     private String className;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition="TEXT")
     private String methodName;
 
-    @Lob
+    @Column(columnDefinition="TEXT")
     private String methodSignature;
     private Integer lineNumber;
 }

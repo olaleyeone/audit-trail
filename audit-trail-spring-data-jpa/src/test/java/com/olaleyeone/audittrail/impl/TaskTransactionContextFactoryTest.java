@@ -1,7 +1,7 @@
 package com.olaleyeone.audittrail.impl;
 
+import com.olalayeone.audittrailtest.DataFactory;
 import com.olalayeone.audittrailtest.EntityTest;
-import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.error.NoTaskActivityException;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +29,9 @@ class TaskTransactionContextFactoryTest extends EntityTest {
     @Autowired
     private TaskContextImpl taskContext;
 
+    @Autowired
+    private DataFactory dataFactory;
+
     private TaskContextHolder taskContextHolder;
     private TaskTransactionContextFactory taskTransactionContextFactory;
     private TaskActivity taskActivity;
@@ -43,8 +46,7 @@ class TaskTransactionContextFactoryTest extends EntityTest {
         taskTransactionLogger = taskTransactionContextFactory.getTaskTransactionLogger();
         this.taskTransactionContextFactory = Mockito.spy(taskTransactionContextFactory);
 
-        taskActivity = new TaskActivity();
-        taskActivity.setTask(new Task());
+        taskActivity = dataFactory.getTaskActivity(false);
 
         Mockito.doReturn(taskActivity.getTask()).when(taskContext).getTask();
         Mockito.doReturn(Optional.of(taskActivity)).when(taskContext).getTaskActivity();
@@ -110,7 +112,8 @@ class TaskTransactionContextFactoryTest extends EntityTest {
         taskContext.start(null);
         transactionTemplate.execute(status -> {
             TaskTransactionContext taskTransactionContext = taskTransactionContextFactory.getObject();
-            taskContext.execute(faker.lordOfTheRings().location(), () -> {});
+            taskContext.execute(faker.lordOfTheRings().location(), () -> {
+            });
 
             assertEquals(2, taskContext.getTaskActivities().size());
             assertEquals(1, taskTransactionContext.getTaskActivities().size());

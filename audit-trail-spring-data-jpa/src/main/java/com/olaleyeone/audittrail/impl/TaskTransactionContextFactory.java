@@ -43,7 +43,7 @@ public class TaskTransactionContextFactory implements FactoryBean<TaskTransactio
                 });
     }
 
-    public void initialize() {
+    protected void initialize() {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             return;
         }

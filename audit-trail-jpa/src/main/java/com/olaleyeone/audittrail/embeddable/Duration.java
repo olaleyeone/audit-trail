@@ -1,10 +1,13 @@
 package com.olaleyeone.audittrail.embeddable;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @AllArgsConstructor
@@ -14,7 +17,7 @@ import java.time.LocalDateTime;
 public class Duration {
 
     @Column(nullable = false)
-    private LocalDateTime startedOn;
+    private OffsetDateTime startedOn;
 
     @Column
     private Long nanoSecondsTaken;

@@ -13,7 +13,7 @@ import org.mockito.Mockito;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +40,7 @@ class TaskTransactionContextTest extends EntityTest {
         TaskTransaction taskTransaction = new TaskTransaction();
         taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(LocalDateTime.now())
+                .startedOn(OffsetDateTime.now())
                 .build());
         Mockito.doReturn(taskTransaction).when(taskTransactionLogger).createTaskTransaction(Mockito.any(), Mockito.any());
 
@@ -54,10 +54,10 @@ class TaskTransactionContextTest extends EntityTest {
     }
 
     @Test
-    void shouldIgnoreNoUpdate() {
+    void shouldNotIgnoreNoUpdate() {
         Mockito.doReturn(Collections.EMPTY_LIST).when(entityStateLogger).getOperations();
         taskTransactionContext.beforeCommit(false);
-        Mockito.verify(taskTransactionLogger, Mockito.never()).saveTaskTransaction(Mockito.any());
+        Mockito.verify(taskTransactionLogger, Mockito.times(1)).saveTaskTransaction(Mockito.any());
     }
 
     @Test

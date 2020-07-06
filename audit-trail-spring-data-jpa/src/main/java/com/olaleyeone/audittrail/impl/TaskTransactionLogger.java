@@ -12,8 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
+import java.util.Stack;
 
 @RequiredArgsConstructor
 public class TaskTransactionLogger {
@@ -25,20 +26,35 @@ public class TaskTransactionLogger {
     public TaskTransaction saveTaskTransaction(TaskTransactionContext taskTransactionContext) {
 
         TaskTransaction taskTransaction = taskTransactionContext.getTaskTransaction();
+
+        //save parent task
+        if (taskTransaction.getTask().getId() == null) {
+            entityManager.persist(taskTransaction.getTask());
+        }
+
+        //save parent activity
+        if (taskTransaction.getTaskActivity().getId() == null) {
+            TaskActivity taskActivity = taskTransaction.getTaskActivity();
+            Stack<TaskActivity> activityStack = new Stack<>();
+            while (taskActivity != null && taskActivity.getId() == null) {
+                activityStack.push(taskActivity);
+                taskActivity = taskActivity.getParentActivity();
+            }
+            activityStack.forEach(it -> entityManager.persist(it));
+        }
+
         entityManager.persist(taskTransaction);
 
         taskTransactionContext.getEntityStateLogger().getOperations()
                 .forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
 
-        taskTransactionContext.getTaskActivities().forEach(activityInTransaction -> {
-            entityManager.persist(activityInTransaction);
-        });
+        taskTransactionContext.getTaskActivities()
+                .forEach(activityInTransaction -> entityManager.persist(activityInTransaction));
         return taskTransaction;
     }
 
-    TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, LocalDateTime startTime) {
+    TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, OffsetDateTime startTime) {
         TaskTransaction taskTransaction = new TaskTransaction();
-//        taskTransaction.setStatus(status);
 
         TaskActivity taskActivity = taskTransactionContext.getTaskActivity();
 
@@ -74,8 +90,12 @@ public class TaskTransactionLogger {
         entityStateAttribute.setName(field.getKey());
         EntityAttributeData historyData = field.getValue();
         entityStateAttribute.setModified(historyData.isModified());
+
+        entityStateAttribute.setHasPreviousValue(historyData.getPreviousValue().getData().isPresent());
+        entityStateAttribute.setHasNewValue(historyData.getValue().getData().isPresent());
+
         historyData.getPreviousValue().getTextValue().ifPresent(entityStateAttribute::setPreviousValue);
-        historyData.getValue().getTextValue().ifPresent(entityStateAttribute::setValue);
+        historyData.getValue().getTextValue().ifPresent(entityStateAttribute::setNewValue);
 
         entityManager.persist(entityStateAttribute);
         return entityStateAttribute;

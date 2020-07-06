@@ -55,7 +55,7 @@ class TaskContextSaverTest extends EntityTest {
 
     @Transactional
     @Test
-    void saveTaskInLimbo() {
+    void saveWebRequestTaskInLimbo() {
         WebRequest webRequest = new WebRequest();
         webRequest.setUri(faker.internet().url());
         webRequest.setId(1L);
@@ -70,6 +70,16 @@ class TaskContextSaverTest extends EntityTest {
 
     @Transactional
     @Test
+    void saveTaskInLimbo() {
+        Task task = dataFactory.getTask(false);
+        task.setId(20L);
+
+        taskContextSaver.saveTask(task);
+        assertNotNull(task.getId());
+    }
+
+    @Transactional
+    @Test
     void saveTaskAlreadySaved() {
         Task task = dataFactory.getTask(true);
         entityManager.detach(task);
@@ -78,6 +88,8 @@ class TaskContextSaverTest extends EntityTest {
 
         Task dbValue = entityManager.find(Task.class, task.getId());
         assertNull(dbValue.getDuration().getNanoSecondsTaken());
+
+        task.setWebRequest(dataFactory.getWebRequest(true));
 
         taskContextSaver.saveTask(task);
         entityManager.flush();
@@ -89,6 +101,9 @@ class TaskContextSaverTest extends EntityTest {
     @Test
     void saveTaskActivity() {
         TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        Task task = dataFactory.getTask(true);
+        taskActivity.setTask(task);
+        assertNotNull(task.getId());
         taskContextSaver.saveTaskActivity(taskActivity, Collections.EMPTY_MAP);
         assertNotNull(taskActivity.getId());
     }
@@ -97,6 +112,8 @@ class TaskContextSaverTest extends EntityTest {
     @Test
     void saveTaskActivityInLimbo() {
         TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        Task task = dataFactory.getTask(true);
+        taskActivity.setTask(task);
         taskActivity.setId(20L);
         taskContextSaver.saveTaskActivity(taskActivity, Collections.EMPTY_MAP);
         assertNotNull(taskActivity.getId());
@@ -181,6 +198,20 @@ class TaskContextSaverTest extends EntityTest {
     }
 
     @Test
+    void saveTaskWithParent() {
+        TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
+        taskContext.start(null);
+
+        taskContext.execute("1", () -> transactionTemplate.execute(status -> {
+            taskContextSaver.save(taskContext);
+            assertNotNull(taskActivity.getId());
+            status.setRollbackOnly();
+            return null;
+        }));
+    }
+
+    @Test
     void saveWithFailedTransaction() {
         TaskActivity taskActivity = dataFactory.getTaskActivity(false);
         TaskContextImpl taskContext = new TaskContextImpl(taskActivity, taskContextHolder, taskTransactionContextFactory);
@@ -193,6 +224,7 @@ class TaskContextSaverTest extends EntityTest {
             taskTransactionContext.getEntityStateLogger().registerDeletedEntity(entityIdentifier);
             return taskContext.executeAndReturn("1", () -> taskContextHolder.getObject().getTaskActivity().get());
         });
+
         transactionTemplate.execute(status -> {
             taskContextSaver.save(taskContext);
             assertNotNull(taskActivity.getId());

@@ -16,10 +16,9 @@ public class WebRequest {
     private String userId;
     private String sessionId;
     private String ipAddress;
-    @Lob
+    @Column(columnDefinition="TEXT")
     private String userAgent;
-    @Column(nullable = false)
-    @Lob
+    @Column(nullable = false, columnDefinition="TEXT")
     private String uri;
     private Integer statusCode;
 }
