@@ -88,19 +88,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
         taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
 
-        assertNotNull(taskTransaction.getId());
-        assertEquals(3, entityStateRepository.countByUnitOfWork(taskTransaction));
-        assertEquals(3, entityStateAttributeRepository.countByUnitOfWork(taskTransaction));
-
-        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
-            EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
-            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
-                    entityIdentifier.getPrimaryKey().toString());
-            assertTrue(optionalEntityHistory.isPresent());
-            EntityState entityState = optionalEntityHistory.get();
-            entityHistoryLog.getAttributes().entrySet()
-                    .forEach(entry -> assertTrue(entityStateAttributeRepository.getByEntityHistory(entityState, entry.getKey()).isPresent()));
-        });
+        validateSavedRecords();
     }
 
     @Test
@@ -119,19 +107,7 @@ class TaskTransactionLoggerTest extends EntityTest {
 
         taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
 
-        assertNotNull(taskTransaction.getId());
-        assertEquals(3, entityStateRepository.countByUnitOfWork(taskTransaction));
-        assertEquals(3, entityStateAttributeRepository.countByUnitOfWork(taskTransaction));
-
-        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
-            EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
-            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
-                    entityIdentifier.getPrimaryKey().toString());
-            assertTrue(optionalEntityHistory.isPresent());
-            EntityState entityState = optionalEntityHistory.get();
-            entityHistoryLog.getAttributes().entrySet()
-                    .forEach(entry -> assertTrue(entityStateAttributeRepository.getByEntityHistory(entityState, entry.getKey()).isPresent()));
-        });
+        validateSavedRecords();
     }
 
     @Test
@@ -147,19 +123,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
         taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
 
-        assertNotNull(taskTransaction.getId());
-        assertEquals(3, entityStateRepository.countByUnitOfWork(taskTransaction));
-        assertEquals(3, entityStateAttributeRepository.countByUnitOfWork(taskTransaction));
-
-        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
-            EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
-            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
-                    entityIdentifier.getPrimaryKey().toString());
-            assertTrue(optionalEntityHistory.isPresent());
-            EntityState entityState = optionalEntityHistory.get();
-            entityHistoryLog.getAttributes().entrySet()
-                    .forEach(entry -> assertTrue(entityStateAttributeRepository.getByEntityHistory(entityState, entry.getKey()).isPresent()));
-        });
+        validateSavedRecords();
     }
 
     @Test
@@ -233,6 +197,22 @@ class TaskTransactionLoggerTest extends EntityTest {
         assertEquals(data.isModified(), attribute.isModified());
         assertEquals(data.getPreviousValue().getTextValue().get(), attribute.getPreviousValue());
         assertEquals(data.getValue().getTextValue().get(), attribute.getNewValue());
+    }
+
+    private void validateSavedRecords() {
+        assertNotNull(taskTransaction.getId());
+        assertEquals(3, entityStateRepository.countByUnitOfWork(taskTransaction));
+        assertEquals(3, entityStateAttributeRepository.countByUnitOfWork(taskTransaction));
+
+        taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
+            EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
+            Optional<EntityState> optionalEntityHistory = entityStateRepository.getByUnitOfWork(taskTransaction, entityIdentifier.getEntityName(),
+                    entityIdentifier.getPrimaryKey().toString());
+            assertTrue(optionalEntityHistory.isPresent());
+            EntityState entityState = optionalEntityHistory.get();
+            entityHistoryLog.getAttributes().entrySet()
+                    .forEach(entry -> assertTrue(entityStateAttributeRepository.getByEntityHistory(entityState, entry.getKey()).isPresent()));
+        });
     }
 
     private List<EntityOperation> getEntityHistoryLogs() {
