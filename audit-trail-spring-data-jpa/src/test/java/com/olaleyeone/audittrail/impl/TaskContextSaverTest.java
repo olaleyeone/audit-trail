@@ -224,6 +224,7 @@ class TaskContextSaverTest extends EntityTest {
             taskTransactionContext.getEntityStateLogger().registerDeletedEntity(entityIdentifier);
             return taskContext.executeAndReturn("1", () -> taskContextHolder.getObject().getTaskActivity().get());
         });
+
         transactionTemplate.execute(status -> {
             taskContextSaver.save(taskContext);
             assertNotNull(taskActivity.getId());

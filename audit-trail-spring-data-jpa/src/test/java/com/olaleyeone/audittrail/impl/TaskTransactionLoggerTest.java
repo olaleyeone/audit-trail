@@ -88,9 +88,9 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
         taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
 
-        assertEquals(1, taskTransactionRepository.count());
-        assertEquals(3, entityStateRepository.count());
-        assertEquals(3, entityStateAttributeRepository.count());
+        assertNotNull(taskTransaction.getId());
+        assertEquals(3, entityStateRepository.countByUnitOfWork(taskTransaction));
+        assertEquals(3, entityStateAttributeRepository.countByUnitOfWork(taskTransaction));
 
         taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
             EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();
@@ -116,9 +116,9 @@ class TaskTransactionLoggerTest extends EntityTest {
         Mockito.doReturn(taskTransaction).when(taskTransactionContext).getTaskTransaction();
         taskTransactionLogger.saveTaskTransaction(taskTransactionContext);
 
-        assertEquals(1, taskTransactionRepository.count());
-        assertEquals(3, entityStateRepository.count());
-        assertEquals(3, entityStateAttributeRepository.count());
+        assertNotNull(taskTransaction.getId());
+        assertEquals(3, entityStateRepository.countByUnitOfWork(taskTransaction));
+        assertEquals(3, entityStateAttributeRepository.countByUnitOfWork(taskTransaction));
 
         taskTransactionContext.getEntityStateLogger().getOperations().forEach(entityHistoryLog -> {
             EntityIdentifier entityIdentifier = entityHistoryLog.getEntityIdentifier();

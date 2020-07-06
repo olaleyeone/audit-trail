@@ -54,10 +54,10 @@ class TaskTransactionContextTest extends EntityTest {
     }
 
     @Test
-    void shouldIgnoreNoUpdate() {
+    void shouldNotIgnoreNoUpdate() {
         Mockito.doReturn(Collections.EMPTY_LIST).when(entityStateLogger).getOperations();
         taskTransactionContext.beforeCommit(false);
-        Mockito.verify(taskTransactionLogger, Mockito.never()).saveTaskTransaction(Mockito.any());
+        Mockito.verify(taskTransactionLogger, Mockito.times(1)).saveTaskTransaction(Mockito.any());
     }
 
     @Test

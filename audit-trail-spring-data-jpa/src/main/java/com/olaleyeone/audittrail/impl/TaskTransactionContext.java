@@ -57,8 +57,8 @@ public class TaskTransactionContext implements TransactionSynchronization {
     public void beforeCommit(boolean readOnly) {
         List<EntityOperation> logs = entityStateLogger.getOperations();
         if (logs.isEmpty()) {
-            logger.warn("No work done in transaction");
-            return;
+            logger.warn("{}: No data modification in transaction", getTaskActivity().getName());
+//            return;
         }
         this.taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
         setTimeTaken();
