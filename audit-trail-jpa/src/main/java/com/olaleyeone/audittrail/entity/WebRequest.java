@@ -18,6 +18,8 @@ public class WebRequest {
     private String ipAddress;
     @Column(columnDefinition="TEXT")
     private String userAgent;
+
+    private String httpMethod;
     @Column(nullable = false, columnDefinition="TEXT")
     private String uri;
     private Integer statusCode;
