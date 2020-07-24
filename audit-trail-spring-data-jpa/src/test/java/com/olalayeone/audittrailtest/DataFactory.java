@@ -19,7 +19,7 @@ public class DataFactory {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public WebRequest getWebRequest(boolean persist){
+    public WebRequest getWebRequest(boolean persist) {
         WebRequest webRequest = new WebRequest();
         webRequest.setUri(faker.internet().url());
         if (persist) {
@@ -46,7 +46,13 @@ public class DataFactory {
         taskActivity.setPrecedence(1);
         taskActivity.setDuration(new Duration(OffsetDateTime.now(), null));
         taskActivity.setStatus(TaskActivity.Status.IN_PROGRESS);
+
+        CodeContext codeContext = new CodeContext();
+        codeContext.setClassName(getClass().getName());
+        codeContext.setMethodName(faker.lordOfTheRings().character());
+        taskActivity.setEntryPoint(codeContext);
         if (persist) {
+            entityManager.persist(codeContext);
             entityManager.persist(taskActivity);
         }
         return taskActivity;

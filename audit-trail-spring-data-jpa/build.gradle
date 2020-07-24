@@ -39,6 +39,7 @@ dependencies {
     annotationProcessor("com.querydsl:querydsl-apt:${queryDslVersion}:jpa")
     annotationProcessor("org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}")
 
+    testImplementation 'org.freemarker:freemarker:2.3.23'
     testCompileOnly "com.querydsl:querydsl-jpa:${queryDslVersion}"
 
     testCompileOnly "org.projectlombok:lombok:$lombokVersion"

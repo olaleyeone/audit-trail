@@ -35,7 +35,8 @@ public class TaskActivity {
     @Column(nullable = false)
     private Integer precedence;
 
-    @OneToOne(cascade = CascadeType.PERSIST)
+    @OneToOne
+    @JoinColumn(nullable = false)
     private CodeContext entryPoint;
 
     @Embedded
@@ -50,7 +51,7 @@ public class TaskActivity {
     @Column(columnDefinition = "TEXT")
     private String failureReason;
 
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne
     private CodeContext failurePoint;
 
     public static enum Status {

@@ -4,6 +4,7 @@ import com.olaleyeone.audittrail.context.Action;
 import com.olaleyeone.audittrail.embeddable.Duration;
 import com.olaleyeone.audittrail.entity.Task;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,7 @@ public class TaskContextFactory {
         return taskContext;
     }
 
+    @SneakyThrows
     public Task startBackgroundTask(String name, String description, Action action) {
         Task task = new Task();
         task.setType(Task.BACKGROUND_JOB);
@@ -38,7 +40,7 @@ public class TaskContextFactory {
         try {
             action.execute();
         } catch (Throwable ex) {
-            logger.error(ex.getMessage(), ex);
+            throw ex;
         } finally {
             duration.setNanoSecondsTaken(duration.getStartedOn().until(OffsetDateTime.now(), ChronoUnit.NANOS));
             taskContextSaver.save(taskContext);

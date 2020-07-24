@@ -95,16 +95,24 @@ public class TaskContextSaver {
             return;
         }
         if (taskActivity.getId() == null) {
-            entityManager.persist(taskActivity);
+            persistTaskActivity(taskActivity);
         } else {
             TaskActivity savedCopy = savedActivities.get(taskActivity.getId());
             if (savedCopy == null) {
                 taskActivity.setId(null);
-                entityManager.persist(taskActivity);
+                persistTaskActivity(taskActivity);
             } else if (savedCopy.getDuration().getNanoSecondsTaken() == null) {
                 entityManager.merge(taskActivity);
             }
         }
+    }
+
+    private void persistTaskActivity(TaskActivity it) {
+        entityManager.persist(it.getEntryPoint());
+        if (it.getFailurePoint() != null) {
+            entityManager.persist(it.getFailurePoint());
+        }
+        entityManager.persist(it);
     }
 
 }

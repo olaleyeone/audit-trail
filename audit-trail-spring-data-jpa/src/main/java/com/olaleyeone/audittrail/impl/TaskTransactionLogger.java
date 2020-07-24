@@ -40,7 +40,7 @@ public class TaskTransactionLogger {
                 activityStack.push(taskActivity);
                 taskActivity = taskActivity.getParentActivity();
             }
-            activityStack.forEach(it -> entityManager.persist(it));
+            activityStack.forEach(it -> persistTaskActivity(it));
         }
 
         entityManager.persist(taskTransaction);
@@ -49,8 +49,16 @@ public class TaskTransactionLogger {
                 .forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
 
         taskTransactionContext.getTaskActivities()
-                .forEach(activityInTransaction -> entityManager.persist(activityInTransaction));
+                .forEach(activityInTransaction -> persistTaskActivity(activityInTransaction));
         return taskTransaction;
+    }
+
+    private void persistTaskActivity(TaskActivity it) {
+        entityManager.persist(it.getEntryPoint());
+        if (it.getFailurePoint() != null) {
+            entityManager.persist(it.getFailurePoint());
+        }
+        entityManager.persist(it);
     }
 
     TaskTransaction createTaskTransaction(TaskTransactionContext taskTransactionContext, OffsetDateTime startTime) {

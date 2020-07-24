@@ -4,10 +4,19 @@ import com.ComponentTest;
 import com.olaleyeone.audittrail.context.TaskContext;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -117,10 +126,33 @@ class TaskContextFactoryTest extends ComponentTest {
     public void startBackgroundTaskWithError() {
         String name = faker.funnyName().name();
         String description = faker.backToTheFuture().quote();
-        Task task = taskContextFactory.startBackgroundTask(name, description, () -> {
-            throw new RuntimeException();
-        });
-        validateTaskProperties(name, description, task);
+
+        Exception exception = null;
+        AtomicReference<TaskActivity> atomicReference = new AtomicReference<>();
+        try {
+            taskContextFactory.startBackgroundTask(name, description, () -> {
+                TaskContextImpl taskContext = taskContextFactory.start(taskContextHolder.getObject().getTask());
+                taskContext.execute("", () -> {
+                    atomicReference.set(taskContextHolder.getObject().getTaskActivity().get());
+                    Configuration configuration = new Configuration(Configuration.VERSION_2_3_22);
+                    configuration.setDefaultEncoding("UTF-8");
+                    configuration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+
+                    Template tpl = new Template(null, new StringReader("${oops}"), configuration);
+                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                    OutputStreamWriter writer = new OutputStreamWriter(bout);
+                    tpl.process(Collections.EMPTY_MAP, writer);
+                });
+            });
+        } catch (Exception e) {
+            exception = e;
+        }
+        assertNotNull(exception);
+        validateTaskProperties(name, description, taskContextHolder.getObject().getTask());
+        assertNotNull(atomicReference.get());
+        assertNotNull(atomicReference.get().getFailurePoint());
+        assertNotNull(atomicReference.get().getFailurePoint().getClassName());
+        assertNotNull(atomicReference.get().getFailurePoint().getMethodName());
     }
 
     private void validateTaskProperties(String name, String description, Task task) {
