@@ -31,4 +31,7 @@ public class Task {
 
     @Embedded
     private Duration duration;
+
+    @OneToOne
+    private Failure failure;
 }

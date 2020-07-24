@@ -29,7 +29,7 @@ public class ActivityAdvice implements ActivityPointCut {
 
         MethodSignature methodSignature = (MethodSignature) jp.getSignature();
 
-        CodeContext entryPoint = CodeContextUtil.getEntryPoint(methodSignature);
+        CodeContext entryPoint = CodeContextUtil.getEntryPoint(jp.getSourceLocation(), methodSignature);
         Activity activity = CodeContextUtil.getActivityAnnotation(methodSignature);
 
         TaskActivity taskActivity = createTaskActivity(parentContext, entryPoint, activity);

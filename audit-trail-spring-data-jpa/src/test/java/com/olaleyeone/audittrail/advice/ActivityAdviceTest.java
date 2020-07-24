@@ -2,7 +2,7 @@ package com.olaleyeone.audittrail.advice;
 
 import com.ComponentTest;
 import com.olaleyeone.audittrail.api.Activity;
-import com.olaleyeone.audittrail.entity.CodeContext;
+import com.olaleyeone.audittrail.entity.Failure;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.impl.CodeContextUtil;
@@ -12,6 +12,7 @@ import com.olaleyeone.audittrail.impl.TaskTransactionContextFactory;
 import lombok.NoArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.aspectj.lang.reflect.SourceLocation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -53,6 +54,7 @@ class ActivityAdviceTest extends ComponentTest {
 
         Mockito.doReturn(methodSignature).when(proceedingJoinPoint).getSignature();
 
+        Mockito.doReturn(Mockito.mock(SourceLocation.class)).when(proceedingJoinPoint).getSourceLocation();
         task = new Task();
     }
 
@@ -72,7 +74,7 @@ class ActivityAdviceTest extends ComponentTest {
         assertEquals(1, taskActivity.getPrecedence());
         assertEquals(TaskActivity.Status.SUCCESSFUL, taskActivity.getStatus());
 
-        assertEquals(taskActivity.getEntryPoint(), CodeContextUtil.getEntryPoint((MethodSignature) proceedingJoinPoint.getSignature()));
+        assertEquals(taskActivity.getEntryPoint(), CodeContextUtil.getEntryPoint(proceedingJoinPoint.getSourceLocation(), (MethodSignature) proceedingJoinPoint.getSignature()));
     }
 
     @Test
@@ -99,14 +101,13 @@ class ActivityAdviceTest extends ComponentTest {
             assertEquals(1, taskActivity.getPrecedence());
             assertEquals(TaskActivity.Status.FAILED, taskActivity.getStatus());
 
-            assertEquals(taskActivity.getEntryPoint(), CodeContextUtil.getEntryPoint((MethodSignature) proceedingJoinPoint.getSignature()));
-            CodeContext failurePoint = taskActivity.getFailurePoint();
-            assertNotNull(failurePoint);
-            assertEquals(Delegate.class.getName(), failurePoint.getClassName());
-            assertEquals("error", failurePoint.getMethodName());
+            assertEquals(taskActivity.getEntryPoint(), CodeContextUtil.getEntryPoint(proceedingJoinPoint.getSourceLocation(), (MethodSignature) proceedingJoinPoint.getSignature()));
+            Failure failure = taskActivity.getFailure();
+            assertNotNull(failure);
+            assertEquals(Delegate.class.getName(), failure.getCodeContext().getClassName());
+            assertEquals("error", failure.getCodeContext().getMethodName());
         }
     }
-
 
     @Test
     void testPropagatedError() throws Throwable {
@@ -133,7 +134,9 @@ class ActivityAdviceTest extends ComponentTest {
             Iterator<TaskActivity> iterator = list.iterator();
             TaskActivity taskActivity1 = iterator.next();
             TaskActivity taskActivity2 = iterator.next();
-            assertEquals(taskActivity1.getFailurePoint(), taskActivity2.getFailurePoint());
+            assertNotNull(taskActivity1.getFailure());
+            assertNotNull(taskActivity2.getFailure());
+            assertEquals(taskActivity1.getFailure().getCodeContext(), taskActivity2.getFailure().getCodeContext());
         }
     }
 

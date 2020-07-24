@@ -2,8 +2,12 @@ package com.olaleyeone.audittrail.impl;
 
 import com.olaleyeone.audittrail.api.Activity;
 import com.olaleyeone.audittrail.entity.CodeContext;
+import com.olaleyeone.audittrail.entity.Failure;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.aspectj.lang.reflect.SourceLocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -12,6 +16,7 @@ import java.util.stream.Collectors;
 
 public final class CodeContextUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(CodeContextUtil.class);
     private static final ThreadLocal<Map<Throwable, CodeContext>> errorThreadLocal = new ThreadLocal<>();
 
     private CodeContextUtil() {
@@ -21,7 +26,15 @@ public final class CodeContextUtil {
         return methodSignature.getMethod().getDeclaredAnnotation(Activity.class);
     }
 
-    public static CodeContext getEntryPoint(MethodSignature methodSignature) {
+    public static CodeContext getEntryPoint(StackTraceElement stackTraceElement) {
+        CodeContext entryPoint = new CodeContext();
+        entryPoint.setClassName(stackTraceElement.getClassName());
+        entryPoint.setMethodName(stackTraceElement.getMethodName());
+        entryPoint.setLineNumber(stackTraceElement.getLineNumber());
+        return entryPoint;
+    }
+
+    public static CodeContext getEntryPoint(SourceLocation sourceLocation, MethodSignature methodSignature) {
         CodeContext entryPoint = new CodeContext();
         entryPoint.setClassName(methodSignature.getDeclaringTypeName());
         entryPoint.setMethodName(methodSignature.getName());
@@ -33,23 +46,27 @@ public final class CodeContextUtil {
                     }
                     return it.getName();
                 }).collect(Collectors.joining(", "))));
+        try {
+            entryPoint.setLineNumber(sourceLocation.getLine());
+        } catch (Exception e) {
+//            logger.error(e.getMessage(), e);
+        }
         return entryPoint;
     }
 
     public static void setFailurePoint(TaskActivity taskActivity, Exception e) {
-        Throwable rootCause = getRootCause(e);
-        taskActivity.setFailureType(rootCause.getClass().getName());
-        taskActivity.setFailureReason(rootCause.getMessage());
-        taskActivity.setFailurePoint(CodeContextUtil.getOrigin(rootCause));
+        taskActivity.setFailure(toFailure(e));
         taskActivity.setStatus(TaskActivity.Status.FAILED);
     }
 
-    public static CodeContext getEntryPoint(StackTraceElement stackTraceElement) {
-        CodeContext entryPoint = new CodeContext();
-        entryPoint.setClassName(stackTraceElement.getClassName());
-        entryPoint.setMethodName(stackTraceElement.getMethodName());
-        entryPoint.setLineNumber(stackTraceElement.getLineNumber());
-        return entryPoint;
+    public static Failure toFailure(Throwable e) {
+        Throwable rootCause = getRootCause(e);
+
+        Failure failure = new Failure();
+        failure.setFailureType(rootCause.getClass().getName());
+        failure.setFailureReason(rootCause.getMessage());
+        failure.setCodeContext(CodeContextUtil.getOrigin(rootCause));
+        return failure;
     }
 
     private static CodeContext getOrigin(Throwable e) {

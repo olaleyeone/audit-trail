@@ -2,6 +2,7 @@ package com.olaleyeone.audittrail.impl;
 
 import com.ComponentTest;
 import com.olaleyeone.audittrail.context.TaskContext;
+import com.olaleyeone.audittrail.entity.Failure;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import freemarker.template.Configuration;
@@ -150,9 +151,11 @@ class TaskContextFactoryTest extends ComponentTest {
         assertNotNull(exception);
         validateTaskProperties(name, description, taskContextHolder.getObject().getTask());
         assertNotNull(atomicReference.get());
-        assertNotNull(atomicReference.get().getFailurePoint());
-        assertNotNull(atomicReference.get().getFailurePoint().getClassName());
-        assertNotNull(atomicReference.get().getFailurePoint().getMethodName());
+        assertNotNull(atomicReference.get().getFailure());
+        Failure failure = atomicReference.get().getFailure();
+        assertNotNull(failure.getCodeContext());
+        assertNotNull(failure.getCodeContext().getClassName());
+        assertNotNull(failure.getCodeContext().getMethodName());
     }
 
     private void validateTaskProperties(String name, String description, Task task) {

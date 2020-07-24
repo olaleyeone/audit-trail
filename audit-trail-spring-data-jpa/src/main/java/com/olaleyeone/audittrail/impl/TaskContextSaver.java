@@ -39,7 +39,7 @@ public class TaskContextSaver {
 
     protected void saveTask(Task task) {
         if (task.getId() == null) {
-            entityManager.persist(task);
+            persistTask(task);
         } else {
             Optional<Task> savedTask = taskRepository.findById(task.getId());
             if (savedTask.isPresent()) {
@@ -52,9 +52,16 @@ public class TaskContextSaver {
                 if (task.getWebRequest() != null) {
                     task.getWebRequest().setId(null);
                 }
-                entityManager.persist(task);
+                persistTask(task);
             }
         }
+    }
+
+    private void persistTask(Task task) {
+        if (task.getFailure() != null) {
+            entityManager.persist(task.getFailure());
+        }
+        entityManager.persist(task);
     }
 
     protected void saveFailedTransactions(TaskContextImpl taskContext) {//List<Long> generatedIds
@@ -109,8 +116,8 @@ public class TaskContextSaver {
 
     private void persistTaskActivity(TaskActivity it) {
         entityManager.persist(it.getEntryPoint());
-        if (it.getFailurePoint() != null) {
-            entityManager.persist(it.getFailurePoint());
+        if (it.getFailure() != null) {
+            entityManager.persist(it.getFailure());
         }
         entityManager.persist(it);
     }

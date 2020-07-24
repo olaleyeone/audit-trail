@@ -42,17 +42,12 @@ public class TaskActivity {
     @Embedded
     private Duration duration;
 
+    @OneToOne
+    private Failure failure;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskActivity.Status status;
-
-    @Column(columnDefinition = "TEXT")
-    private String failureType;
-    @Column(columnDefinition = "TEXT")
-    private String failureReason;
-
-    @ManyToOne
-    private CodeContext failurePoint;
 
     public static enum Status {
         SUCCESSFUL, FAILED, IN_PROGRESS

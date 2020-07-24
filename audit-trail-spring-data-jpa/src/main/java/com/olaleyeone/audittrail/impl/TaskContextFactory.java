@@ -40,6 +40,7 @@ public class TaskContextFactory {
         try {
             action.execute();
         } catch (Throwable ex) {
+            task.setFailure(CodeContextUtil.toFailure(ex));
             throw ex;
         } finally {
             duration.setNanoSecondsTaken(duration.getStartedOn().until(OffsetDateTime.now(), ChronoUnit.NANOS));
