@@ -73,9 +73,11 @@ class TaskContextSaverTest extends EntityTest {
     void saveTaskInLimbo() {
         Task task = dataFactory.getTask(false);
         task.setId(20L);
+        task.setFailure(CodeContextUtil.toFailure(new RuntimeException()));
 
         taskContextSaver.saveTask(task);
         assertNotNull(task.getId());
+        assertNotNull(task.getFailure());
     }
 
     @Transactional
@@ -95,6 +97,27 @@ class TaskContextSaverTest extends EntityTest {
         entityManager.flush();
         entityManager.refresh(dbValue);
         assertNotNull(dbValue.getId());
+    }
+
+    @Transactional
+    @Test
+    void saveTaskAlreadySavedEndsWithError() {
+        Task task = dataFactory.getTask(true);
+        entityManager.detach(task);
+        long nanoSeconds = faker.number().randomNumber();
+        task.getDuration().setNanoSecondsTaken(nanoSeconds);
+
+        Task dbValue = entityManager.find(Task.class, task.getId());
+        assertNull(dbValue.getDuration().getNanoSecondsTaken());
+
+        task.setWebRequest(dataFactory.getWebRequest(true));
+        task.setFailure(CodeContextUtil.toFailure(new RuntimeException()));
+
+        taskContextSaver.saveTask(task);
+        entityManager.flush();
+        entityManager.refresh(dbValue);
+        assertNotNull(dbValue.getId());
+        assertNotNull(dbValue.getFailure());
     }
 
     @Transactional

@@ -43,22 +43,27 @@ public class TaskContextSaver {
         } else {
             Optional<Task> savedTask = taskRepository.findById(task.getId());
             if (savedTask.isPresent()) {
-                entityManager.merge(task);
                 if (task.getWebRequest() != null) {
                     entityManager.merge(task.getWebRequest());
                 }
-            } else {
-                task.setId(null);
-                if (task.getWebRequest() != null) {
-                    task.getWebRequest().setId(null);
+                if (task.getFailure() != null && savedTask.get().getFailure() == null) {
+                    entityManager.persist(task.getFailure());
                 }
+                entityManager.merge(task);
+            } else {
                 persistTask(task);
             }
         }
     }
 
     private void persistTask(Task task) {
+        task.setId(null);
+        if (task.getWebRequest() != null) {
+            task.getWebRequest().setId(null);
+            entityManager.persist(task.getWebRequest());
+        }
         if (task.getFailure() != null) {
+            task.getFailure().setId(null);
             entityManager.persist(task.getFailure());
         }
         entityManager.persist(task);
