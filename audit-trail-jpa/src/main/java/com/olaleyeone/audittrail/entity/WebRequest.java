@@ -18,7 +18,14 @@ public class WebRequest {
     private String ipAddress;
     @Column(columnDefinition="TEXT")
     private String userAgent;
+
+    private String httpMethod;
     @Column(nullable = false, columnDefinition="TEXT")
     private String uri;
+
+    private String scheme;
+    private String host;
+    private String path;
+
     private Integer statusCode;
 }

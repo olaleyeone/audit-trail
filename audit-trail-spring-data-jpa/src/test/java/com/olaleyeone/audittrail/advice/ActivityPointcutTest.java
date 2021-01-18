@@ -41,7 +41,7 @@ class ActivityPointcutTest {
         Mockito.verify(advice, Mockito.times(1)).adviceActivity(Mockito.argThat(argument -> {
             MethodSignature methodSignature = (MethodSignature) argument.getSignature();
 
-            CodeContext entryPoint = CodeContextUtil.getEntryPoint(methodSignature);
+            CodeContext entryPoint = CodeContextUtil.getEntryPoint(argument.getSourceLocation(), methodSignature);
             assertNotNull(entryPoint);
             assertEquals(Target.class.getName(), entryPoint.getClassName());
             assertEquals("activity", entryPoint.getMethodName());
@@ -89,7 +89,7 @@ class ActivityPointcutTest {
 
         @Activity("Test")
         void activity(int arg0, String arg1) {
-            //intentional
+            //noop
         }
     }
 }

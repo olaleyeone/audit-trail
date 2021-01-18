@@ -35,23 +35,19 @@ public class TaskActivity {
     @Column(nullable = false)
     private Integer precedence;
 
-    @OneToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne
+    @JoinColumn(nullable = false)
     private CodeContext entryPoint;
 
     @Embedded
     private Duration duration;
 
+    @ManyToOne
+    private Failure failure;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskActivity.Status status;
-
-    @Column(columnDefinition = "TEXT")
-    private String failureType;
-    @Column(columnDefinition = "TEXT")
-    private String failureReason;
-
-    @ManyToOne(cascade = CascadeType.PERSIST)
-    private CodeContext failurePoint;
 
     public static enum Status {
         SUCCESSFUL, FAILED, IN_PROGRESS

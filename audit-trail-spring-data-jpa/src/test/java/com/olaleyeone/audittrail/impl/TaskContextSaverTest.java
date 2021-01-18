@@ -73,9 +73,11 @@ class TaskContextSaverTest extends EntityTest {
     void saveTaskInLimbo() {
         Task task = dataFactory.getTask(false);
         task.setId(20L);
+        task.setFailure(CodeContextUtil.toFailure(new RuntimeException()));
 
         taskContextSaver.saveTask(task);
         assertNotNull(task.getId());
+        assertNotNull(task.getFailure());
     }
 
     @Transactional
@@ -99,6 +101,27 @@ class TaskContextSaverTest extends EntityTest {
 
     @Transactional
     @Test
+    void saveTaskAlreadySavedEndsWithError() {
+        Task task = dataFactory.getTask(true);
+        entityManager.detach(task);
+        long nanoSeconds = faker.number().randomNumber();
+        task.getDuration().setNanoSecondsTaken(nanoSeconds);
+
+        Task dbValue = entityManager.find(Task.class, task.getId());
+        assertNull(dbValue.getDuration().getNanoSecondsTaken());
+
+        task.setWebRequest(dataFactory.getWebRequest(true));
+        task.setFailure(CodeContextUtil.toFailure(new RuntimeException()));
+
+        taskContextSaver.saveTask(task);
+        entityManager.flush();
+        entityManager.refresh(dbValue);
+        assertNotNull(dbValue.getId());
+        assertNotNull(dbValue.getFailure());
+    }
+
+    @Transactional
+    @Test
     void saveTaskActivity() {
         TaskActivity taskActivity = dataFactory.getTaskActivity(false);
         Task task = dataFactory.getTask(true);
@@ -115,6 +138,18 @@ class TaskContextSaverTest extends EntityTest {
         Task task = dataFactory.getTask(true);
         taskActivity.setTask(task);
         taskActivity.setId(20L);
+        taskContextSaver.saveTaskActivity(taskActivity, Collections.EMPTY_MAP);
+        assertNotNull(taskActivity.getId());
+    }
+
+    @Transactional
+    @Test
+    void saveTaskActivityWithLimboEntryPoint() {
+        TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        Task task = dataFactory.getTask(true);
+        taskActivity.setTask(task);
+        taskActivity.setId(20L);
+        taskActivity.getEntryPoint().setId(1L);
         taskContextSaver.saveTaskActivity(taskActivity, Collections.EMPTY_MAP);
         assertNotNull(taskActivity.getId());
     }

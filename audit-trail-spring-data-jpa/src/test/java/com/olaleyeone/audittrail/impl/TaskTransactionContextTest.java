@@ -40,7 +40,7 @@ class TaskTransactionContextTest extends EntityTest {
         TaskTransaction taskTransaction = new TaskTransaction();
         taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(OffsetDateTime.now())
+                .startedAt(OffsetDateTime.now())
                 .build());
         Mockito.doReturn(taskTransaction).when(taskTransactionLogger).createTaskTransaction(Mockito.any(), Mockito.any());
 

@@ -1,5 +1,7 @@
 package com.olaleyeone.audittrail.impl;
 
+import com.olaleyeone.audittrail.entity.CodeContext;
+import com.olaleyeone.audittrail.entity.Failure;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.repository.TaskActivityRepository;
@@ -39,22 +41,31 @@ public class TaskContextSaver {
 
     protected void saveTask(Task task) {
         if (task.getId() == null) {
-            entityManager.persist(task);
+            persistTask(task);
         } else {
             Optional<Task> savedTask = taskRepository.findById(task.getId());
             if (savedTask.isPresent()) {
-                entityManager.merge(task);
                 if (task.getWebRequest() != null) {
                     entityManager.merge(task.getWebRequest());
                 }
-            } else {
-                task.setId(null);
-                if (task.getWebRequest() != null) {
-                    task.getWebRequest().setId(null);
+                if (task.getFailure() != null && savedTask.get().getFailure() == null) {
+                    entityManager.persist(task.getFailure());
                 }
-                entityManager.persist(task);
+                entityManager.merge(task);
+            } else {
+                persistTask(task);
             }
         }
+    }
+
+    private void persistTask(Task task) {
+        task.setId(null);
+        if (task.getWebRequest() != null) {
+            task.getWebRequest().setId(null);
+            entityManager.persist(task.getWebRequest());
+        }
+        saveFailure(task.getFailure());
+        entityManager.persist(task);
     }
 
     protected void saveFailedTransactions(TaskContextImpl taskContext) {//List<Long> generatedIds
@@ -95,15 +106,40 @@ public class TaskContextSaver {
             return;
         }
         if (taskActivity.getId() == null) {
-            entityManager.persist(taskActivity);
+            persistTaskActivity(taskActivity);
         } else {
             TaskActivity savedCopy = savedActivities.get(taskActivity.getId());
             if (savedCopy == null) {
                 taskActivity.setId(null);
-                entityManager.persist(taskActivity);
+                persistTaskActivity(taskActivity);
             } else if (savedCopy.getDuration().getNanoSecondsTaken() == null) {
                 entityManager.merge(taskActivity);
             }
+        }
+    }
+
+    private void persistTaskActivity(TaskActivity it) {
+        saveEntryPoint(it);
+        Failure failure = it.getFailure();
+        saveFailure(failure);
+        entityManager.persist(it);
+    }
+
+    private void saveFailure(Failure failure) {
+        if (failure != null) {
+            failure.getCodeContext().setId(null);
+            failure.setId(null);
+            entityManager.persist(failure);
+        }
+    }
+
+    private void saveEntryPoint(TaskActivity it) {
+        if (it.getEntryPoint().getId() == null) {
+            entityManager.persist(it.getEntryPoint());
+        } else if (entityManager.find(CodeContext.class, it.getEntryPoint().getId()) == null) {
+            entityManager.clear();
+            it.getEntryPoint().setId(null);
+            entityManager.persist(it.getEntryPoint());
         }
     }
 

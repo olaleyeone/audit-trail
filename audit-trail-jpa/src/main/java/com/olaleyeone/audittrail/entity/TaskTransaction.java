@@ -26,7 +26,7 @@ public class TaskTransaction {
     @Column(nullable = false)
     private Status status;
 
-    public static enum Status {
+    public enum Status {
         COMMITTED, ROLLED_BACK, UNKNOWN
     }
 }

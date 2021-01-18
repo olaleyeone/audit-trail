@@ -17,7 +17,7 @@ import java.time.OffsetDateTime;
 public class Duration {
 
     @Column(nullable = false)
-    private OffsetDateTime startedOn;
+    private OffsetDateTime startedAt;
 
     @Column
     private Long nanoSecondsTaken;

@@ -71,7 +71,7 @@ class TaskTransactionLoggerTest extends EntityTest {
         taskTransaction = new TaskTransaction();
         taskTransaction.setStatus(TaskTransaction.Status.COMMITTED);
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(OffsetDateTime.now())
+                .startedAt(OffsetDateTime.now())
                 .build());
         taskTransaction.setTask(taskActivity.getTask());
         taskTransaction.setTaskActivity(taskActivity);

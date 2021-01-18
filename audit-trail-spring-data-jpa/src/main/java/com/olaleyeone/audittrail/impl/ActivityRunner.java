@@ -21,7 +21,7 @@ public class ActivityRunner {
         taskContext.start(parentContext);
         OffsetDateTime now = OffsetDateTime.now();
         taskActivity.setDuration(Duration.builder()
-                .startedOn(now)
+                .startedAt(now)
                 .build());
 
         E result;
@@ -34,7 +34,7 @@ public class ActivityRunner {
             throw e;
         } finally {
             taskActivity.setDuration(Duration.builder()
-                    .startedOn(now)
+                    .startedAt(now)
                     .nanoSecondsTaken(now.until(OffsetDateTime.now(), ChronoUnit.NANOS))
                     .build());
             taskContext.end();

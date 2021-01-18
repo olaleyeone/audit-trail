@@ -3,10 +3,7 @@ package com.olaleyeone.audittrail.impl;
 import com.olaleyeone.audittrail.api.EntityAttributeData;
 import com.olaleyeone.audittrail.api.EntityOperation;
 import com.olaleyeone.audittrail.embeddable.Duration;
-import com.olaleyeone.audittrail.entity.EntityState;
-import com.olaleyeone.audittrail.entity.EntityStateAttribute;
-import com.olaleyeone.audittrail.entity.TaskActivity;
-import com.olaleyeone.audittrail.entity.TaskTransaction;
+import com.olaleyeone.audittrail.entity.*;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +26,7 @@ public class TaskTransactionLogger {
 
         //save parent task
         if (taskTransaction.getTask().getId() == null) {
-            entityManager.persist(taskTransaction.getTask());
+            persistTask(taskTransaction.getTask());
         }
 
         //save parent activity
@@ -40,7 +37,7 @@ public class TaskTransactionLogger {
                 activityStack.push(taskActivity);
                 taskActivity = taskActivity.getParentActivity();
             }
-            activityStack.forEach(it -> entityManager.persist(it));
+            activityStack.forEach(it -> persistTaskActivity(it));
         }
 
         entityManager.persist(taskTransaction);
@@ -49,7 +46,7 @@ public class TaskTransactionLogger {
                 .forEach(entityHistoryLog -> createEntityHistory(taskTransaction, entityHistoryLog));
 
         taskTransactionContext.getTaskActivities()
-                .forEach(activityInTransaction -> entityManager.persist(activityInTransaction));
+                .forEach(activityInTransaction -> persistTaskActivity(activityInTransaction));
         return taskTransaction;
     }
 
@@ -62,7 +59,7 @@ public class TaskTransactionLogger {
         taskTransaction.setTaskActivity(taskActivity);
 
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(startTime)
+                .startedAt(startTime)
 //                .nanoSeconds(taskTransactionContext.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS))
                 .build());
 
@@ -99,5 +96,20 @@ public class TaskTransactionLogger {
 
         entityManager.persist(entityStateAttribute);
         return entityStateAttribute;
+    }
+
+    private void persistTaskActivity(TaskActivity it) {
+        entityManager.persist(it.getEntryPoint());
+        if (it.getFailure() != null) {
+            entityManager.persist(it.getFailure());
+        }
+        entityManager.persist(it);
+    }
+
+    private void persistTask(Task task) {
+        if (task.getFailure() != null) {
+            entityManager.persist(task.getFailure());
+        }
+        entityManager.persist(task);
     }
 }
