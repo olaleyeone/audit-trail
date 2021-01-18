@@ -57,9 +57,9 @@ class EntityDataExtractorImplTest extends EntityTest {
         item.setAudit(audit);
         Map<String, AuditData> entityData = entityDataExtractor.extractAttributes(item);
         assertFalse(entityData.containsKey("audit"));
-        assertTrue(entityData.containsKey("audit.createdOn"));
+        assertTrue(entityData.containsKey("audit.createdAt"));
         assertTrue(entityData.containsKey("audit.createdBy"));
-        assertTrue(entityData.containsKey("audit.lastUpdatedOn"));
+        assertTrue(entityData.containsKey("audit.lastUpdatedAt"));
         assertTrue(entityData.containsKey("audit.lastUpdatedBy"));
     }
 
@@ -70,9 +70,9 @@ class EntityDataExtractorImplTest extends EntityTest {
         Map<String, AuditData> entityData = entityDataExtractor.extractAttributes(item);
         assertTrue(entityData.containsKey("audit"));
         assertFalse(entityData.get("audit").getData().isPresent());
-        assertFalse(entityData.containsKey("audit.createdOn"));
+        assertFalse(entityData.containsKey("audit.createdAt"));
         assertFalse(entityData.containsKey("audit.createdBy"));
-        assertFalse(entityData.containsKey("audit.lastUpdatedOn"));
+        assertFalse(entityData.containsKey("audit.lastUpdatedAt"));
         assertFalse(entityData.containsKey("audit.lastUpdatedBy"));
     }
 

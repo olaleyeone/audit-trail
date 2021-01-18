@@ -65,7 +65,7 @@ public class DataFactory {
         taskTransaction.setTask(taskActivity.getTask());
 
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(OffsetDateTime.now())
+                .startedAt(OffsetDateTime.now())
                 .nanoSecondsTaken(faker.number().randomNumber())
                 .build());
 

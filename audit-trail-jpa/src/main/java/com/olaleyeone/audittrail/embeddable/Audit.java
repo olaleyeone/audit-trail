@@ -13,23 +13,23 @@ import java.time.OffsetDateTime;
 public class Audit {
 
     @Column(updatable = false, nullable = false)
-    private OffsetDateTime createdOn;
+    private OffsetDateTime createdAt;
 
     private String createdBy;
 
-    private OffsetDateTime lastUpdatedOn;
+    private OffsetDateTime lastUpdatedAt;
     private String lastUpdatedBy;
 
     @PrePersist
     public void prePersist() {
-        if (createdOn != null) {
+        if (createdAt != null) {
             return;
         }
-        createdOn = OffsetDateTime.now();
+        createdAt = OffsetDateTime.now();
     }
 
     @PreUpdate
     public void preUpdate() {
-        lastUpdatedOn = OffsetDateTime.now();
+        lastUpdatedAt = OffsetDateTime.now();
     }
 }

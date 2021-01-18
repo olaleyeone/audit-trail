@@ -59,7 +59,7 @@ public class TaskTransactionLogger {
         taskTransaction.setTaskActivity(taskActivity);
 
         taskTransaction.setDuration(Duration.builder()
-                .startedOn(startTime)
+                .startedAt(startTime)
 //                .nanoSeconds(taskTransactionContext.getStartTime().until(LocalDateTime.now(), ChronoUnit.NANOS))
                 .build());
 

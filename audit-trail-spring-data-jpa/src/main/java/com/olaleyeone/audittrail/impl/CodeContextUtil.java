@@ -63,8 +63,8 @@ public final class CodeContextUtil {
         Throwable rootCause = getRootCause(e);
 
         Failure failure = new Failure();
-        failure.setFailureType(rootCause.getClass().getName());
-        failure.setFailureReason(rootCause.getMessage());
+        failure.setType(rootCause.getClass().getName());
+        failure.setReason(rootCause.getMessage());
         failure.setCodeContext(CodeContextUtil.getOrigin(rootCause));
         return failure;
     }
@@ -82,6 +82,9 @@ public final class CodeContextUtil {
             errorThreadLocal.set(errorInstructionMap);
         }
         Throwable rootCause = getRootCause(e);
+        if (rootCause.getStackTrace().length == 0) {
+            return null;
+        }
         CodeContext codeContext = getEntryPoint(rootCause.getStackTrace()[0]);
         errorInstructionMap.put(e, codeContext);
         return codeContext;

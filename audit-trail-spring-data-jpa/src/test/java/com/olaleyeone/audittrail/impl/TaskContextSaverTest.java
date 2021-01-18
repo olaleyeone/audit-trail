@@ -144,6 +144,18 @@ class TaskContextSaverTest extends EntityTest {
 
     @Transactional
     @Test
+    void saveTaskActivityWithLimboEntryPoint() {
+        TaskActivity taskActivity = dataFactory.getTaskActivity(false);
+        Task task = dataFactory.getTask(true);
+        taskActivity.setTask(task);
+        taskActivity.setId(20L);
+        taskActivity.getEntryPoint().setId(1L);
+        taskContextSaver.saveTaskActivity(taskActivity, Collections.EMPTY_MAP);
+        assertNotNull(taskActivity.getId());
+    }
+
+    @Transactional
+    @Test
     void saveTaskActivityPartiallySaved() {
         TaskActivity taskActivity = dataFactory.getTaskActivity(true);
         entityManager.detach(taskActivity);

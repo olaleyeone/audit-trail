@@ -35,14 +35,14 @@ public class TaskActivity {
     @Column(nullable = false)
     private Integer precedence;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(nullable = false)
     private CodeContext entryPoint;
 
     @Embedded
     private Duration duration;
 
-    @OneToOne
+    @ManyToOne
     private Failure failure;
 
     @Enumerated(EnumType.STRING)

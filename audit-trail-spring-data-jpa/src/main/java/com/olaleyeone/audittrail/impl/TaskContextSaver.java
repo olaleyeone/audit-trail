@@ -1,5 +1,7 @@
 package com.olaleyeone.audittrail.impl;
 
+import com.olaleyeone.audittrail.entity.CodeContext;
+import com.olaleyeone.audittrail.entity.Failure;
 import com.olaleyeone.audittrail.entity.Task;
 import com.olaleyeone.audittrail.entity.TaskActivity;
 import com.olaleyeone.audittrail.repository.TaskActivityRepository;
@@ -62,10 +64,7 @@ public class TaskContextSaver {
             task.getWebRequest().setId(null);
             entityManager.persist(task.getWebRequest());
         }
-        if (task.getFailure() != null) {
-            task.getFailure().setId(null);
-            entityManager.persist(task.getFailure());
-        }
+        saveFailure(task.getFailure());
         entityManager.persist(task);
     }
 
@@ -120,11 +119,28 @@ public class TaskContextSaver {
     }
 
     private void persistTaskActivity(TaskActivity it) {
-        entityManager.persist(it.getEntryPoint());
-        if (it.getFailure() != null) {
-            entityManager.persist(it.getFailure());
-        }
+        saveEntryPoint(it);
+        Failure failure = it.getFailure();
+        saveFailure(failure);
         entityManager.persist(it);
+    }
+
+    private void saveFailure(Failure failure) {
+        if (failure != null) {
+            failure.getCodeContext().setId(null);
+            failure.setId(null);
+            entityManager.persist(failure);
+        }
+    }
+
+    private void saveEntryPoint(TaskActivity it) {
+        if (it.getEntryPoint().getId() == null) {
+            entityManager.persist(it.getEntryPoint());
+        } else if (entityManager.find(CodeContext.class, it.getEntryPoint().getId()) == null) {
+            entityManager.clear();
+            it.getEntryPoint().setId(null);
+            entityManager.persist(it.getEntryPoint());
+        }
     }
 
 }

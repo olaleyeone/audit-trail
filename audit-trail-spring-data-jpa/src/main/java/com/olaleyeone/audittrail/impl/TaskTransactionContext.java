@@ -66,7 +66,7 @@ public class TaskTransactionContext implements TransactionSynchronization {
     }
 
     private void setTimeTaken() {
-        this.taskTransaction.getDuration().setNanoSecondsTaken(taskTransaction.getDuration().getStartedOn()
+        this.taskTransaction.getDuration().setNanoSecondsTaken(taskTransaction.getDuration().getStartedAt()
                 .until(OffsetDateTime.now(), ChronoUnit.NANOS));
     }
 
@@ -91,7 +91,11 @@ public class TaskTransactionContext implements TransactionSynchronization {
         if (taskTransaction.getStatus() == TaskTransaction.Status.COMMITTED) {
             throw new IllegalStateException();
         }
-        taskTransactionLogger.saveTaskTransaction(this);
+        try {
+            taskTransactionLogger.saveTaskTransaction(this);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }
     }
 
     public Task getTask() {

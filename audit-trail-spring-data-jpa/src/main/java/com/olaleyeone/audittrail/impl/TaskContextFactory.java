@@ -33,7 +33,7 @@ public class TaskContextFactory {
         task.setName(name);
         task.setDescription(description);
         Duration duration = Duration.builder()
-                .startedOn(OffsetDateTime.now())
+                .startedAt(OffsetDateTime.now())
                 .build();
         task.setDuration(duration);
         TaskContextImpl taskContext = start(task);
@@ -43,7 +43,7 @@ public class TaskContextFactory {
             task.setFailure(CodeContextUtil.toFailure(ex));
             throw ex;
         } finally {
-            duration.setNanoSecondsTaken(duration.getStartedOn().until(OffsetDateTime.now(), ChronoUnit.NANOS));
+            duration.setNanoSecondsTaken(duration.getStartedAt().until(OffsetDateTime.now(), ChronoUnit.NANOS));
             taskContextSaver.save(taskContext);
         }
         return task;
