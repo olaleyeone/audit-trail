@@ -58,8 +58,12 @@ public class EntityManagerAdvice implements EntityManagerPointcut {
         EntityStateLogger entityStateLogger = taskTransactionContext.getEntityStateLogger();
         if (!entityStateLogger.isNew(entityIdentifier)) {
             if (!entityStateLogger.isPreviousStateLoaded(entityIdentifier)) {
-                Object loadedEntity = entityDataExtractor.getEntityBeforeOperation(entityIdentifier);
-                entityStateLogger.setPreviousState(entityIdentifier, entityDataExtractor.extractAttributes(loadedEntity));
+                Object stateBeforeModification = entityDataExtractor.getEntityBeforeOperation(entityIdentifier);
+                if (stateBeforeModification == null) {
+                    throw new RuntimeException(String.format("Unable to fetch current state of %s[%s]", entityIdentifier.getEntityName(),
+                            entityIdentifier.getPrimaryKey()));
+                }
+                entityStateLogger.setPreviousState(entityIdentifier, entityDataExtractor.extractAttributes(stateBeforeModification));
             }
             WebRequest webRequest = taskTransactionContext.getTask().getWebRequest();
             if (entity instanceof Audited && webRequest != null) {

@@ -127,8 +127,8 @@ public class TaskContextSaver {
 
     private void saveFailure(Failure failure) {
         if (failure != null) {
-            failure.getCodeContext().setId(null);
-            failure.setId(null);
+//            failure.getCodeContext().setId(null);
+//            failure.setId(null);
             entityManager.persist(failure);
         }
     }
@@ -137,9 +137,9 @@ public class TaskContextSaver {
         if (it.getEntryPoint().getId() == null) {
             entityManager.persist(it.getEntryPoint());
         } else if (entityManager.find(CodeContext.class, it.getEntryPoint().getId()) == null) {
-            entityManager.clear();
-            it.getEntryPoint().setId(null);
-            entityManager.persist(it.getEntryPoint());
+//            entityManager.clear();
+//            it.getEntryPoint().setId(null);
+//            entityManager.persist(it.getEntryPoint());
         }
     }
 

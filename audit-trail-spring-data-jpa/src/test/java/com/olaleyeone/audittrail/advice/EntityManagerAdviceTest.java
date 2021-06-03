@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.inOrder;
 
 class EntityManagerAdviceTest extends ComponentTest {
@@ -94,6 +95,8 @@ class EntityManagerAdviceTest extends ComponentTest {
         Mockito.doReturn(expectedResult).when(proceedingJoinPoint).proceed(args);
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
+        Object previousState = new Object();
+        Mockito.doReturn(previousState).when(entityDataExtractor).getEntityBeforeOperation(Mockito.any());
 
         Map<String, AuditData> data = Mockito.mock(Map.class);
         Mockito.doReturn(data).when(entityDataExtractor).extractAttributes(Mockito.any());
@@ -105,6 +108,8 @@ class EntityManagerAdviceTest extends ComponentTest {
                 .proceed(args);
         Mockito.verify(entityDataExtractor, Mockito.times(1))
                 .getIdentifier(args[0]);
+        Mockito.verify(entityDataExtractor, Mockito.times(1))
+                .extractAttributes(previousState);
         Mockito.verify(entityDataExtractor, Mockito.times(1))
                 .extractAttributes(args[0]);
         Mockito.verify(entityStateLogger, Mockito.times(1))
@@ -198,6 +203,7 @@ class EntityManagerAdviceTest extends ComponentTest {
         taskActivity.getTask().setWebRequest(webRequest);
 
         Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
+        Mockito.doReturn(new Object()).when(entityDataExtractor).getEntityBeforeOperation(Mockito.any());
         Mockito.doReturn(false).when(entityStateLogger).isNew(Mockito.any());
 
         entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
@@ -235,5 +241,22 @@ class EntityManagerAdviceTest extends ComponentTest {
                 .registerNewEntity(Mockito.any());
         Mockito.verify(entityStateLogger, Mockito.never())
                 .setCurrentState(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void failOnUpdateOfUnknownEntity() throws Throwable {
+        Object[] args = new Object[]{new Object()};
+        Mockito.doReturn(args).when(proceedingJoinPoint).getArgs();
+
+        Mockito.doReturn(entityIdentifier).when(entityDataExtractor).getIdentifier(Mockito.any());
+        Mockito.doReturn(false).when(entityStateLogger).isNew(Mockito.any());
+
+        try {
+            entityManagerAdvice.adviceEntityUpdate(proceedingJoinPoint);
+            fail();
+        } catch (RuntimeException e) {
+            Mockito.verify(entityDataExtractor, Mockito.times(1))
+                    .getEntityBeforeOperation(entityIdentifier);
+        }
     }
 }
